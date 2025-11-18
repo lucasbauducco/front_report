@@ -12,7 +12,9 @@ export default defineConfig((/* ctx */) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
-      'axios'
+      'axios',
+      'auth_router',
+      //'dialogs',
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
@@ -86,7 +88,16 @@ export default defineConfig((/* ctx */) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: []
+      plugins: [
+        'Notify',      // Para $q.notify()
+        'Dialog',      // Para $q.dialog()
+        'Loading',     // Para $q.loading.show/hide()
+        'LoadingBar',  // Para la barra de carga superior
+        'LocalStorage', // Para $q.localStorage
+        'SessionStorage', // Para $q.sessionStorage
+        'Meta',        // Para meta tags dinámicos
+        'BottomSheet', // Para $q.bottomSheet()
+      ]
     },
 
     // animations: 'all', // --- includes all animations

@@ -10,12 +10,9 @@
           aria-label="Menu"
           @click="toggleLeftDrawer"
         />
-
         <q-toolbar-title>
-          Quasar App
+          Mi Aplicación
         </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
       </q-toolbar>
     </q-header>
 
@@ -23,19 +20,27 @@
       v-model="leftDrawerOpen"
       show-if-above
       bordered
+      :width="220"
     >
       <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
+        <q-item-label header>
+          Menú
         </q-item-label>
 
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
+        <q-item
+          v-for="item in menuItems"
+          :key="item.label"
+          clickable
+          :active="isRouteActive(item)"
+          @click="goToRoute(item)"
+        >
+          <q-item-section avatar>
+            <q-icon :name="item.icon" />
+          </q-item-section>
+          <q-item-section>
+            {{ item.label }}
+          </q-item-section>
+        </q-item>
       </q-list>
     </q-drawer>
 
@@ -47,56 +52,44 @@
 
 <script setup>
 import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
-
-const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-]
+import { useRouter, useRoute } from 'vue-router'
 
 const leftDrawerOpen = ref(false)
 
+const menuItems = [
+  {
+    label: 'Inicio',
+    icon: 'home',
+    route: { name: 'index' }
+  },
+  {
+    label: 'Perfil',
+    icon: 'person',
+    route: { name: 'perfil' }
+  },
+  {
+    label: 'Ajustes',
+    icon: 'settings',
+    route: { name: 'ajustes' }
+  }
+  // Puedes agregar más items aquí
+]
+
+const router = useRouter()
+const route = useRoute()
+
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
+}
+
+function goToRoute(item) {
+  if (!isRouteActive(item)) {
+    router.push(item.route)
+  }
+}
+
+function isRouteActive(item) {
+  // Compara por nombre, ya que es el método recomendado por Vue Router
+  return item.route.name && route.name === item.route.name
 }
 </script>
