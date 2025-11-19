@@ -1,10 +1,35 @@
 <template>
   <div class="q-pa-md q-mx-auto filtro-centro-contenedor">
-    <q-form
-      @submit="filtrar"
-      @reset="onReset"
-      class="q-gutter-md form-background"
+    <!-- Botón para mostrar/ocultar filtros -->
+    <div class="row justify-center q-mb-md">
+      <q-btn
+        :icon="filtrosVisibles ? 'expand_less' : 'expand_more'"
+        :label="filtrosVisibles ? 'Ocultar Filtros' : 'Mostrar Filtros'"
+        color="primary"
+        outline
+        @click="toggleFiltros"
+        class="filtros-toggle-btn"
+      >
+        <q-badge
+          v-if="hayFiltrosActivos"
+          color="accent"
+          floating
+          rounded
+        />
+      </q-btn>
+    </div>
+
+    <!-- Formulario de filtros con transición -->
+    <transition
+      name="slide-fade"
+      appear
     >
+      <q-form
+        v-show="filtrosVisibles"
+        @submit="filtrar"
+        @reset="onReset"
+        class="q-gutter-md form-background"
+      >
       <div class="q-pa-md">
         <div class="q-gutter-md row justify-center">
             <!-- Empresa -->
@@ -177,6 +202,7 @@
         </div>
       </div>
     </q-form>
+    </transition>
   </div>
 </template>
 
@@ -189,14 +215,40 @@
   max-width: 900px;
   margin: 0 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: space-between;
 }
+
+.filtros-toggle-btn {
+  min-width: 180px;
+}
+
 .filtro-row {
   width: 100%;
   justify-content: left;
   gap: 24px;
 }
+
+/* Transiciones para mostrar/ocultar */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.slide-fade-enter-from {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
 @media (max-width: 800px) {
   .filtro-centro-contenedor {
     max-width: 100vw;
@@ -207,12 +259,17 @@
     align-items: center;
     gap: 10px;
   }
+  
+  .filtros-toggle-btn {
+    min-width: 150px;
+    font-size: 0.875rem;
+  }
 }
 </style>
 
 <script>
 import { useQuasar } from 'quasar'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import registrosService from 'src/services/registros.service'
 
 export default {
@@ -220,6 +277,9 @@ export default {
   
   setup (props, { emit }) {
     const $q = useQuasar()
+
+    // Estado de visibilidad del formulario
+    const filtrosVisibles = ref(false)
 
     // Estado de los filtros
     const empresa = ref(null)
@@ -229,6 +289,24 @@ export default {
     const fechaDesde = ref(null)
     const fechaHasta = ref(null)
     const anioContable = ref(null)
+
+    // Computed para verificar si hay filtros activos
+    const hayFiltrosActivos = computed(() => {
+      return !!(
+        empresa.value ||
+        usuarioAsignado.value ||
+        rubro.value ||
+        tarea.value ||
+        fechaDesde.value ||
+        fechaHasta.value ||
+        anioContable.value
+      )
+    })
+
+    // Función para mostrar/ocultar filtros
+    function toggleFiltros() {
+      filtrosVisibles.value = !filtrosVisibles.value
+    }
 
     // Opciones para selects
     const opcionesEmpresas = ref([])
@@ -378,6 +456,10 @@ export default {
     }
 
     return {
+      filtrosVisibles,
+      hayFiltrosActivos,
+      toggleFiltros,
+
       empresa,
       usuarioAsignado,
       rubro,

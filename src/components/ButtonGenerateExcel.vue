@@ -1,9 +1,9 @@
 <template>
-  <div class="q-pa-md">
+  <div class="">
     <q-btn
       :loading="enProceso"
       :disable="enProceso || !hasData"
-      color="green-5"
+      color="accent"
       icon="description"
       :label="enProceso ? 'Creando archivo...' : 'Generar Excel'"
       @click="generarExcel"
@@ -149,7 +149,11 @@ export default {
         let mensaje = 'Error al generar el archivo Excel'
         let detalle = error.message
         
-        if (error.response) {
+        // Manejar errores de timeout específicamente
+        if (error.isTimeout || error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+          mensaje = 'Tiempo de espera agotado'
+          detalle = 'La generación del Excel está tardando más de lo esperado. Esto puede deberse a una gran cantidad de datos. Por favor, intenta con filtros más específicos o contacta al administrador.'
+        } else if (error.response) {
           // Error de respuesta del servidor
           if (error.response.status === 404) {
             mensaje = 'No hay registros para exportar'
@@ -160,6 +164,10 @@ export default {
           } else if (error.response.status === 400) {
             mensaje = 'Datos inválidos'
             detalle = error.response.data?.detail || 'Los filtros proporcionados no son válidos'
+          } else if (error.response.status === 504 || error.response.status === 524) {
+            // Errores de gateway timeout (Cloudflare)
+            mensaje = 'Tiempo de espera agotado (Cloudflare)'
+            detalle = 'El servidor tardó demasiado en responder. Por favor, intenta con filtros más específicos o contacta al administrador.'
           } else {
             mensaje = error.response.data?.error || mensaje
             detalle = error.response.data?.detail || detalle
@@ -171,7 +179,7 @@ export default {
           message: mensaje,
           caption: detalle,
           position: 'top',
-          timeout: 5000
+          timeout: 7000
         })
 
         emit('export-error', error)

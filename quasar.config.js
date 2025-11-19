@@ -14,6 +14,7 @@ export default defineConfig((/* ctx */) => {
     boot: [
       'axios',
       'auth_router',
+      'meta',
       //'dialogs',
     ],
 
@@ -32,7 +33,7 @@ export default defineConfig((/* ctx */) => {
       // 'line-awesome',
       // 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
 
-      'roboto-font', // optional, you are not bound to it
+      // Usamos la fuente del sistema, ya no requerimos roboto-font aquí
       'material-icons', // optional, you are not bound to it
     ],
 
@@ -126,7 +127,10 @@ export default defineConfig((/* ctx */) => {
         'render' // keep this as last one
       ],
 
-      // extendPackageJson (json) {},
+      extendPackageJson (json) {
+        // Agregar productDescription para usar en index.html
+        json.productDescription = 'Sistema de gestión de registros y reportes - Nimbus Report'
+      },
       // extendSSRWebserverConf (esbuildConf) {},
 
       // manualStoreSerialization: true,

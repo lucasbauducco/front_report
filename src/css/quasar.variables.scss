@@ -12,14 +12,31 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
-$primary   : #1976D2;
-$secondary : #26A69A;
-$accent    : #9C27B0;
+// ============================================
+// Paleta de Colores Nimbus
+// ============================================
+// Colores del Logo
+$nimbus-purple-dark   : #5e3bb5;   // Color principal del fondo del logo
+$nimbus-purple-medium : #7B5FCF;   // Color de la nube morada
+$nimbus-purple-low    : #bbb8c4;   // Color claro/fondo muy suave (low)
+$nimbus-white         : #FFFFFF;   // Color del texto/iconos blancos
 
-$dark      : #1D1D1D;
-$dark-page : #121212;
+// Colores Adicionales de la Paleta
+$nimbus-lavender      : #B8A9E6;   // Color secundario suave (lavanda claro)
+$nimbus-purple-deep   : #3D2B8F;   // Color de contraste alto (morado muy oscuro)
+$nimbus-cyan          : #6BC5D4;   // Color de acento (cian Nimbus)
 
-$positive  : #21BA45;
-$negative  : #C10015;
-$info      : #31CCEC;
-$warning   : #F2C037;
+// ============================================
+// Variables de Quasar (aplicando paleta Nimbus)
+// ============================================
+$primary   : #5e3bb5;   // Morado oscuro (color principal de Nimbus)
+$secondary : #7B5FCF;   // Morado medio (nube del logo)
+$accent    : #6BC5D4;   // Cian Nimbus (color de acento)
+
+$dark      : #3D2B8F;   // Morado muy oscuro (para modo oscuro)
+$dark-page : #1D1D1D;   // Negro suave (fondo de página oscura)
+
+$positive  : #21BA45;   // Verde (mantener para éxito)
+$negative  : #C10015;   // Rojo (mantener para errores)
+$info      : #6BC5D4;   // Cian Nimbus (usar para información)
+$warning   : #F2C037;   // Amarillo (mantener para advertencias)

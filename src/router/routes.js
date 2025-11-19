@@ -13,7 +13,7 @@ const routes = [
     meta: {requiresAuth: true},
     children: [
       {path: '', name: 'index', component: () => import('pages/IndexPage.vue')},
-      {path: 'registros', name: 'registros', component: () => import('pages/RegistrosPage.vue')},
+      {path: 'registros', name: 'registros', component: () => import('pages/IndexPage.vue')},
     ]
   },
   {path: '/:catchAll(.*)*', component: () => import('pages/ErrorNotFound.vue'), meta: {requiresAuth: true}}

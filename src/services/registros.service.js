@@ -167,6 +167,22 @@ export const registrosService = {
   },
 
   /**
+   * Obtiene la lista de sucursales para los filtros
+   * @param {Object} params - Parámetros opcionales (para paginación si el backend la requiere)
+   * @returns {Promise} Promesa con los datos de sucursales
+   */
+  async getSucursales(params = {}) {
+    try {
+      const response = await api.get('/sucursales/', { params })
+      // Si el backend retorna paginación, extraer results, sino retornar data directamente
+      return response.data.results || response.data
+    } catch (error) {
+      console.error('Error al obtener sucursales:', error)
+      throw error
+    }
+  },
+
+  /**
    * Obtiene información sobre el archivo Excel de registros existente
    * @returns {Promise} Promesa con los datos del archivo (url, fecha, tamaño, etc.)
    */
@@ -244,10 +260,23 @@ export const registrosService = {
    */
   async generarExcelRegistros(filtros = {}) {
     try {
-      const response = await api.post('/excel/registros/generar/', filtros)
-      return response.data
+      // Usar un timeout extendido de 120 segundos para evitar bloqueos de Cloudflare
+      // Cloudflare típicamente tiene un límite de 100 segundos, pero algunos planes permiten más
+      // Si el backend procesa en background, esta petición debería completarse rápidamente
+      const response = await api.post('/excel/registros/generar/', filtros, {
+        timeout: 120000 // 120 segundos (2 minutos)
+      })
+      return response.data 
     } catch (error) {
       console.error('Error al generar archivo Excel:', error)
+      
+      // Manejar específicamente errores de timeout
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        const timeoutError = new Error('La generación del Excel está tardando más de lo esperado. Por favor, inténtalo de nuevo o contacta al administrador.')
+        timeoutError.isTimeout = true
+        throw timeoutError
+      }
+      
       throw error
     }
   }
