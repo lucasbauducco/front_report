@@ -1,4 +1,4 @@
-# Nimbus Report - Sistema de Gestión de Registros y Reportes
+# Report - Sistema de Gestión de Registros y Reportes
 
 Sistema frontend desarrollado con **Quasar Framework** y **Vue 3** para la gestión de registros de horas trabajadas, con funcionalidades de creación, edición, filtrado y exportación a Excel.
 
