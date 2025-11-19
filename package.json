@@ -1,8 +1,8 @@
 {
   "name": "front-report",
   "version": "0.0.1",
-  "description": "Sistema de gestión de registros y reportes - Nimbus Report",
-  "productName": "Nimbus Report",
+  "description": "Sistema de gestión de registros y reportes - Report",
+  "productName": "Report+",
   "author": "Lucas Bauducco <lucasbauducco@gmail.com>",
   "type": "module",
   "private": true,

@@ -16,13 +16,13 @@ export const brandingConfig = {
   logoPath: '/icons/logo_hd.png',
   
   // Texto alternativo para el logo (accesibilidad)
-  logoAlt: 'Logo de Nimbus Report',
+  logoAlt: 'Logo de empresa Report+',
   
   // Nombre de la empresa/aplicación
-  companyName: 'Nimbus Report',
+  companyName: 'empresa Report',
   
   // Nombre de la aplicación (aparece en la pestaña del navegador)
-  appName: 'Nimbus Report',
+  appName: 'empresa Report',
   
   // Descripción de la aplicación
   appDescription: 'Sistema de gestión de registros y reportes',

@@ -11,8 +11,8 @@
             @error="onLogoError"
           />
         </template>
-        <span class="nimbus-typography-login login-app-title">
-          <span class="login-app-title-main">nimbus</span>
+        <span class="report-typography-login login-app-title">
+          <span class="login-app-title-main">report</span>
           <span class="text-grey-3 login-app-title-report" style="font-weight: 300;">Report</span>
           <span class="text-grey-3" style="font-weight: 100;">+</span>
         </span>
@@ -21,7 +21,7 @@
       <!-- Tarjeta de login -->
       <q-card class="login-card">
         <q-card-section class="login-card-header">
-          <div class="login-title nimbus-typography-login">
+          <div class="login-title report-typography-login">
             Iniciar Sesión
           </div>
         </q-card-section>
@@ -34,11 +34,11 @@
               :rules="[val => !!val || 'El usuario es requerido']"
               outlined
               dense
-              class="nimbus-input"
+              class="report-input"
               color="primary"
             >
               <template v-slot:prepend>
-                <q-icon name="person" class="nimbus-input-icon" />
+                <q-icon name="person" class="report-input-icon" />
               </template>
             </q-input>
 
@@ -49,11 +49,11 @@
               :rules="[val => !!val || 'La contraseña es requerida']"
               outlined
               dense
-              class="nimbus-input"
+              class="report-input"
               color="primary"
             >
               <template v-slot:prepend>
-                <q-icon name="lock" class="nimbus-input-icon" />
+                <q-icon name="lock" class="report-input-icon" />
               </template>
             </q-input>
 
@@ -61,7 +61,7 @@
               label="Iniciar Sesión"
               type="submit"
               color="primary"
-              class="full-width nimbus-login-button"
+              class="full-width report-login-button"
               :loading="loading"
               unelevated
             />
@@ -182,7 +182,7 @@ async function handleLogin() {
 <style lang="scss" scoped>
 /* Contenedor principal con gradiente de fondo */
 .login-container {
-  background: linear-gradient(200deg, $primary 25%, $secondary 50%, $nimbus-purple-medium 75%);
+  background: linear-gradient(200deg, $primary 25%, $secondary 50%, $report-purple-medium 75%);
   position: relative;
   overflow: hidden;
   
@@ -273,7 +273,7 @@ async function handleLogin() {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
   font-size: 1.75rem;
   font-weight: 600;
-  color: $nimbus-white;
+  color: $report-white;
   letter-spacing: 0.02em;
   text-transform: none;
   margin: 0;
@@ -283,28 +283,28 @@ async function handleLogin() {
   padding: 2rem 1.5rem;
 }
 
-/* Tipografía Nimbus para login */
-.nimbus-typography-login {
+/* Tipografía report para login */
+.report-typography-login {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
 }
 
-/* Inputs con estilo Nimbus */
-.nimbus-input {
+/* Inputs con estilo report */
+.report-input {
   margin-bottom: 0.5rem;
   
   :deep(.q-field__label) {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
     font-weight: 500;
-    color: $nimbus-purple-dark;
+    color: $report-purple-dark;
   }
   
   :deep(.q-field__control) {
-    color: $nimbus-purple-dark;
+    color: $report-purple-dark;
   }
   
   :deep(.q-field--outlined .q-field__control) {
     border-radius: 8px;
-    border-color: $nimbus-lavender;
+    border-color: $report-lavender;
     transition: all 0.3s ease;
   }
   
@@ -319,18 +319,18 @@ async function handleLogin() {
   
   :deep(.q-field__native) {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
-    color: $nimbus-purple-dark;
+    color: $report-purple-dark;
     font-weight: 400;
   }
 }
 
-.nimbus-input-icon {
+.report-input-icon {
   color: $primary;
   font-size: 1.25rem;
 }
 
 /* Botón de login */
-.nimbus-login-button {
+.report-login-button {
   margin-top: 1rem;
   padding: 0.75rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
@@ -353,7 +353,7 @@ async function handleLogin() {
   }
   
   :deep(.q-btn__content) {
-    color: $nimbus-white;
+    color: $report-white;
   }
 }
 
@@ -385,7 +385,7 @@ async function handleLogin() {
     padding: 1.5rem 1rem;
   }
   
-  .nimbus-login-button {
+  .report-login-button {
     padding: 0.625rem;
     font-size: 0.95rem;
   }

@@ -13,30 +13,30 @@
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
 // ============================================
-// Paleta de Colores Nimbus
+// Paleta de Colores report
 // ============================================
 // Colores del Logo
-$nimbus-purple-dark   : #7B04BA;   // PANTONE 2084 C - Color principal del fondo del logo
-$nimbus-purple-medium : #8e61fa;   // PANTONE 2101 C - Color de la nube morada
-$nimbus-purple-low    : #bbb8c4;   // Color claro/fondo muy suave (low)
-$nimbus-white         : #FFFFFF;   // Color del texto/iconos blancos
+$report-purple-dark   : #7B04BA;   // PANTONE 2084 C - Color principal del fondo del logo
+$report-purple-medium : #8e61fa;   // PANTONE 2101 C - Color de la nube morada
+$report-purple-low    : #bbb8c4;   // Color claro/fondo muy suave (low)
+$report-white         : #FFFFFF;   // Color del texto/iconos blancos
 
 // Colores Adicionales de la Paleta
-$nimbus-lavender      : #B8A9E6;   // Color secundario suave (lavanda claro)
-$nimbus-purple-deep   : #5a0388;   // Color de contraste alto (morado muy oscuro - derivado del primary)
-$nimbus-cyan          : #6BC5D4;   // Color de acento (cian Nimbus)
+$report-lavender      : #B8A9E6;   // Color secundario suave (lavanda claro)
+$report-purple-deep   : #5a0388;   // Color de contraste alto (morado muy oscuro - derivado del primary)
+$report-cyan          : #6BC5D4;   // Color de acento (cian report)
 
 // ============================================
-// Variables de Quasar (aplicando paleta Nimbus)
+// Variables de Quasar (aplicando paleta report)
 // ============================================
 $primary   : #7B04BA;   // PANTONE 2084 C - Morado oscuro (color principal empresarial)
 $secondary : #8e61fa;   // PANTONE 2101 C - Morado medio (color secundario empresarial)
-$accent    : #6BC5D4;   // Cian Nimbus (color de acento)
+$accent    : #6BC5D4;   // Cian report (color de acento)
 
 $dark      : #5a0388;   // Morado muy oscuro (derivado del primary para modo oscuro)
 $dark-page : #1D1D1D;   // Negro suave (fondo de página oscura)
 
 $positive  : #21BA45;   // Verde (mantener para éxito)
 $negative  : #C10015;   // Rojo (mantener para errores)
-$info      : #6BC5D4;   // Cian Nimbus (usar para información)
+$info      : #6BC5D4;   // Cian report (usar para información)
 $warning   : #F2C037;   // Amarillo (mantener para advertencias)

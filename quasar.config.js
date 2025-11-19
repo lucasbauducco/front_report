@@ -129,7 +129,7 @@ export default defineConfig((/* ctx */) => {
 
       extendPackageJson (json) {
         // Agregar productDescription para usar en index.html
-        json.productDescription = 'Sistema de gestión de registros y reportes - Nimbus Report'
+        json.productDescription = 'Sistema de gestión de registros y reportes - Report+'
       },
       // extendSSRWebserverConf (esbuildConf) {},
 

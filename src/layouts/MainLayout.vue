@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated class="nimbus-header">
+    <q-header elevated class="report-header">
       <q-toolbar class="q-py-sm">
         <q-btn
           flat
@@ -12,19 +12,19 @@
         />
         
         <q-toolbar-title>
-          <span class="nimbus-typography">
-            nimbus <span class="text-grey-3" style="font-weight: 300;">Report</span><span class="text-grey-3" style="font-weight: 100;">+</span>
+          <span class="report-typography">
+            <span class="text-grey-3" style="font-weight: 300;">Report</span><span class="text-grey-3" style="font-weight: 100;">+</span>
           </span>
         </q-toolbar-title>
         
         <!-- Logo configurable para cada empresa - alineado a la derecha, con link externo -->
         <div v-if="!logoError" class="logo-container q-ml-auto">
           <a 
-            href="https://www.sistemasnimbus.com/" 
+            href="https://www.sistemasreport.com/" 
             target="_blank" 
             rel="noopener noreferrer"
             tabindex="-1"
-            aria-label="Sitio web Sistemas Nimbus"
+            aria-label="Sitio web Sistemas report"
           >
             <img 
               :src="logoPath" 
@@ -42,10 +42,10 @@
       show-if-above
       bordered
       :width="240"
-      class="nimbus-drawer"
+      class="report-drawer"
     >
-      <q-list class="nimbus-menu-list">
-        <q-item-label header class="nimbus-menu-header">
+      <q-list class="report-menu-list">
+        <q-item-label header class="report-menu-header">
           <q-icon name="cloud" class="q-mr-md" />
         </q-item-label>
 
@@ -55,13 +55,13 @@
           clickable
           :active="isRouteActive(item)"
           @click="goToRoute(item)"
-          class="nimbus-menu-item"
+          class="report-menu-item"
         >
           <q-item-section avatar>
-            <q-icon :name="item.icon" class="nimbus-menu-icon" />
+            <q-icon :name="item.icon" class="report-menu-icon" />
           </q-item-section>
           <q-item-section>
-            <div class="nimbus-menu-label">{{ item.label }}</div>
+            <div class="report-menu-label">{{ item.label }}</div>
           </q-item-section>
         </q-item>
 
@@ -69,15 +69,15 @@
         <q-separator class="q-my-md" />
 
         <!-- Información del usuario -->
-        <q-item class="nimbus-user-info">
+        <q-item class="report-user-info">
           <q-item-section avatar>
             <q-avatar color="primary" text-color="white" icon="person" />
           </q-item-section>
           <q-item-section>
-            <q-item-label class="nimbus-user-name text-primary">
+            <q-item-label class="report-user-name text-primary">
               {{ userDisplayName }}
             </q-item-label>
-            <q-item-label caption class="nimbus-user-email text-teal">
+            <q-item-label caption class="report-user-email text-teal">
               {{ userEmail }}
             </q-item-label>
           </q-item-section>
@@ -87,19 +87,19 @@
         <q-item 
           clickable 
           @click="handleLogout"
-          class="nimbus-logout-item"
+          class="report-logout-item"
         >
           <q-item-section avatar>
-            <q-icon name="logout" class="nimbus-menu-icon" />
+            <q-icon name="logout" class="report-menu-icon" />
           </q-item-section>
           <q-item-section>
-            <div class="nimbus-menu-label">Cerrar Sesión</div>
+            <div class="report-menu-label">Cerrar Sesión</div>
           </q-item-section>
         </q-item>
       </q-list>
     </q-drawer>
 
-    <q-page-container class="nimbus-page-container">
+    <q-page-container class="report-page-container">
       <router-view />
     </q-page-container>
   </q-layout>
@@ -243,8 +243,8 @@ function handleLogout() {
   }
 }
 
-/* Tipografía Nimbus */
-.nimbus-typography {
+/* Tipografía report */
+.report-typography {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
   font-size: 1.5rem;
   font-weight: 500;
@@ -257,30 +257,30 @@ function handleLogout() {
 
 /* Responsive tipografía */
 @media (max-width: 600px) {
-  .nimbus-typography {
+  .report-typography {
     font-size: 1.25rem;
   }
 }
 
-/* Colores de fondo usando la paleta Nimbus */
-.nimbus-header {
-  background: $nimbus-purple-medium !important; /* Morado oscuro principal */
+/* Colores de fondo usando la paleta report */
+.report-header {
+  background: $report-purple-medium !important; /* Morado oscuro principal */
 }
 
-.nimbus-page-container {
-  background: $nimbus-purple-low !important; /* Lavanda claro para el fondo del main */
+.report-page-container {
+  background: $report-purple-low !important; /* Lavanda claro para el fondo del main */
   min-height: 100vh;
 }
 
-/* Estilos del menú lateral Nimbus */
-.nimbus-drawer {
-  background: linear-gradient(200deg, $primary 25%, $secondary 50%, $nimbus-purple-medium 75%);
-  border-right: 2px solid $nimbus-lavender;
+/* Estilos del menú lateral report */
+.report-drawer {
+  background: linear-gradient(200deg, $primary 25%, $secondary 50%, $report-purple-medium 75%);
+  border-right: 2px solid $report-lavender;
 }
 
-.nimbus-menu-header {
-  background: linear-gradient(200deg, $primary 25%, $secondary 50%, $nimbus-purple-medium 75%);
-  color: $nimbus-white !important;
+.report-menu-header {
+  background: linear-gradient(200deg, $primary 25%, $secondary 50%, $report-purple-medium 75%);
+  color: $report-white !important;
   text-align: center;
   font-weight: 600;
   font-size: 1rem;
@@ -292,12 +292,12 @@ function handleLogout() {
   
   .q-icon {
     font-size: 1.5rem;
-    color: $nimbus-white;
+    color: $report-white;
   }
 }
 
 
-.nimbus-menu-item {
+.report-menu-item {
   margin: 0.25rem 0.75rem;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -322,19 +322,19 @@ function handleLogout() {
   }
   
   &:hover {
-    background: rgba($nimbus-lavender, 0.3);
+    background: rgba($report-lavender, 0.3);
     transform: translateX(4px);
     
     &::before {
       width: 4px;
     }
     
-    .nimbus-menu-icon {
+    .report-menu-icon {
       color: $primary;
       transform: scale(1.1);
     }
     
-    .nimbus-menu-label {
+    .report-menu-label {
       color: $primary;
       font-weight: 600;
     }
@@ -348,33 +348,33 @@ function handleLogout() {
       width: 4px;
     }
     
-    .nimbus-menu-icon {
+    .report-menu-icon {
       color: $primary;
     }
     
-    .nimbus-menu-label {
+    .report-menu-label {
       color: $primary;
       font-weight: 600;
     }
   }
 }
 
-.nimbus-menu-icon {
-  color: $nimbus-purple-medium;
+.report-menu-icon {
+  color: $report-purple-medium;
   font-size: 1.5rem;
   transition: all 0.3s ease;
 }
 
-.nimbus-menu-label {
+.report-menu-label {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
   font-size: 0.95rem;
-  color: $nimbus-purple-dark;
+  color: $report-purple-dark;
   transition: all 0.3s ease;
   font-weight: 500;
 }
 
 /* Estilos para la información del usuario */
-.nimbus-user-info {
+.report-user-info {
   margin: 0.5rem 0.75rem;
   padding: 0.75rem;
   border-radius: 8px;
@@ -382,15 +382,15 @@ function handleLogout() {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.nimbus-user-name {
+.report-user-name {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
   font-size: 0.9rem;
   font-weight: 600;
-  color: $nimbus-white;
+  color: $report-white;
   line-height: 1.2;
 }
 
-.nimbus-user-email {
+.report-user-email {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.8);
@@ -399,7 +399,7 @@ function handleLogout() {
 }
 
 /* Estilos para el botón de cerrar sesión */
-.nimbus-logout-item {
+.report-logout-item {
   margin: 0.25rem 0.75rem;
   border-radius: 8px;
   transition: all 0.3s ease;
@@ -431,12 +431,12 @@ function handleLogout() {
       width: 4px;
     }
     
-    .nimbus-menu-icon {
+    .report-menu-icon {
       color: $negative;
       transform: scale(1.1);
     }
     
-    .nimbus-menu-label {
+    .report-menu-label {
       color: $negative;
       font-weight: 600;
     }

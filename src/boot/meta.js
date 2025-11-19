@@ -36,7 +36,7 @@ export default defineBoot(({ app }) => {
       document.head.appendChild(appleLink)
     }
 
-    // Actualizar favicon con el logo de Nimbus
+    // Actualizar favicon con el logo empresarial
     updateFavicon(LOGO_PATH)
   }
 })

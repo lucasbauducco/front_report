@@ -1,8 +1,8 @@
 <template>
   <q-page padding>
     <div class="q-pa-md">
-      <div class="nimbus-page-title-container">
-        <div class="nimbus-page-title">Registros</div>
+      <div class="report-page-title-container">
+        <div class="report-page-title">Registros</div>
       </div>
       
       <!-- Formulario de filtros -->
@@ -663,7 +663,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 /* Contenedor del título con fondo y separador */
-.nimbus-page-title-container {
+.report-page-title-container {
   background: rgba(255, 255, 255, 0.7);
   border-radius: 8px;
   padding: 1.5rem 1.25rem;
@@ -684,8 +684,8 @@ onMounted(() => {
   }
 }
 
-/* Tipografía Nimbus para títulos de página */
-.nimbus-page-title {
+/* Tipografía report para títulos de página */
+.report-page-title {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'Inter', 'SF Pro Display', sans-serif;
   font-size: 2.5rem;
   font-weight: 600;
@@ -697,12 +697,12 @@ onMounted(() => {
 }
 
 @media (max-width: 600px) {
-  .nimbus-page-title-container {
+  .report-page-title-container {
     padding: 1rem 0.875rem;
     margin-bottom: 1rem;
   }
   
-  .nimbus-page-title {
+  .report-page-title {
     font-size: 1.75rem;
   }
 }
