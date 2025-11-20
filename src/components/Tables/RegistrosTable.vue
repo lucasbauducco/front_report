@@ -15,7 +15,8 @@
       <div class="q-mb-md row q-gutter-md">
         <ButtonGenerateExcel
           ref="buttonGenerateExcel"
-          :data="registros"
+          tipo="registros"
+          :data="registrosFiltrados"
           :columns="columnsForExcel"
           :filters="filtrosActuales"
           file-name="registros"
@@ -44,7 +45,7 @@
       </div>
       
       <!-- Botón para crear registro -->
-      <div class="q-mb-md">
+      <div v-if="user_detail?.is_subadministrador || user_detail?.is_admin || user_detail?.is_staff" class="q-mb-md">
         <q-btn
           color="primary"
           icon="add"
@@ -53,11 +54,22 @@
         />
       </div>
       
+      <!-- Botón para mostrar/ocultar inactivos -->
+      <div class="q-mb-md flex justify-end">
+        <q-toggle
+          v-model="mostrarInactivos"
+          label=""
+          color="primary"
+          :false-value="false"
+          :true-value="true"
+        />
+      </div>
+      
       <!-- Tabla de Registros -->
       <q-card>
         <q-card-section>
           <q-table
-            :rows="registros"
+            :rows="registrosFiltrados"
             :columns="columnas"
             :loading="loading"
             row-key="id"
@@ -76,7 +88,7 @@
               </q-td>
             </template>
 
-            <template v-slot:body-cell-acciones="props">
+            <template v-if="user_detail?.is_subadministrador || user_detail?.is_admin || user_detail?.is_staff" v-slot:body-cell-acciones="props">
               <q-td :props="props">
                 <q-btn
                   flat
@@ -120,8 +132,8 @@
       </div>
     </div>
 
-    <!-- Modal de edición de orden -->
-    <FormEditarOrden
+    <!-- Modal unificado de registro (crear/editar) -->
+    <FormRegistro
       v-model="mostrarFormEditar"
       :registro="registroEditando"
       @guardado="onRegistroGuardado"
@@ -129,7 +141,7 @@
     />
 
     <!-- Modal de creación de registro -->
-    <FormCrearRegistro
+    <FormRegistro
       v-model="mostrarFormCrear"
       @guardado="onRegistroCreado"
       @cancelado="onRegistroCreacionCancelado"
@@ -138,14 +150,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { registrosService } from 'src/services/registros.service'
-import FormFiltros from 'src/components/FormFiltros.vue'
-import ButtonGenerateExcel from 'src/components/ButtonGenerateExcel.vue'
-import FormEditarOrden from 'src/components/FormEditarOrden.vue'
-import FormCrearRegistro from 'src/components/FormCrearRegistro.vue'
-
+import FormFiltros from 'src/components/Forms/FormFiltros.vue'
+import ButtonGenerateExcel from 'src/components/Buttons/ButtonGenerateExcel.vue'
+import FormRegistro from 'src/components/Forms/FormRegistro.vue'
+import { user_detail } from 'src/utils/auth'
 const $q = useQuasar()
 
 const registros = ref([])
@@ -159,6 +170,7 @@ const buttonGenerateExcel = ref(null)
 const mostrarFormEditar = ref(false)
 const registroEditando = ref(null)
 const mostrarFormCrear = ref(false)
+const mostrarInactivos = ref(false) // Por defecto oculta los inactivos
 
 const pagination = ref({
   sortBy: 'fecha_registro',
@@ -231,7 +243,9 @@ const columnas = [
     label: 'Acciones',
     field: 'acciones',
     align: 'center',
-    sortable: false
+    sortable: false,
+    requiredAuth: true,
+    show: (user_detail) => user_detail?.is_subadministrador || user_detail?.is_admin || user_detail?.is_staff
   }
 ]
 
@@ -652,6 +666,17 @@ const formatearFecha = (fecha) => {
     minute: '2-digit'
   })
 }
+
+// Computed para filtrar registros según el estado de mostrarInactivos
+const registrosFiltrados = computed(() => {
+  if (mostrarInactivos.value) {
+    // Si está activado, mostrar todos (activos e inactivos)
+    return registros.value
+  } else {
+    // Por defecto, solo mostrar activos
+    return registros.value.filter(registro => registro.activo === true)
+  }
+})
 
 // Cargar registros al montar el componente
 onMounted(() => {

@@ -22,8 +22,10 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@electron/packager": "^18.4.4",
     "@quasar/app-vite": "^2.1.0",
     "autoprefixer": "^10.4.2",
+    "electron": "^39.2.2",
     "postcss": "^8.4.14"
   },
   "engines": {

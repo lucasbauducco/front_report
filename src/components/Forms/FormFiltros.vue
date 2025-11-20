@@ -32,8 +32,9 @@
       >
       <div class="q-pa-md">
         <div class="q-gutter-md row justify-center">
-            <!-- Empresa -->
+            <!-- Empresa (solo para registros y ausencias) -->
             <q-select
+              v-if="tipo !== 'control_horas'"
               filled
               v-model="empresa"
               use-input
@@ -84,8 +85,9 @@
               </template>
             </q-select>
 
-            <!-- Rubros -->
+            <!-- Rubros (solo para registros) -->
             <q-select
+              v-if="tipo === 'registros'"
               filled
               v-model="rubro"
               use-input
@@ -113,8 +115,10 @@
       </div>
 
       <div class="q-pa-md">
-        <div class="q-gutter-md row justify">
+        <div class="q-gutter-md row justify-center">
+            <!-- Tareas (solo para registros) -->
             <q-select
+              v-if="tipo === 'registros'"
               filled
               v-model="tarea"
               use-input
@@ -145,7 +149,7 @@
                 filled
                 v-model="fechaDesde"
                 mask="####-##-##"
-                hint="Fecha inicial"
+                hint="Fecha desde"
                 stack-label
                 style="width: 160px;"
               >
@@ -164,7 +168,7 @@
                 filled
                 v-model="fechaHasta"
                 mask="####-##-##"
-                hint="Fecha final"
+                hint="Fecha hasta"
                 stack-label
                 style="width: 160px;"
               >
@@ -182,7 +186,9 @@
 
       <div class="q-pa-md">
         <div class="q-gutter-md row justify items-center">
+          <!-- Año contable (solo para registros) -->
           <q-input
+            v-if="tipo === 'registros'"
             filled
             type="number"
             v-model="anioContable"
@@ -196,8 +202,8 @@
           />
 
           <div class="q-ml-md" style="display: flex; gap: 8px;">
-            <q-btn label="Filtrar" type="submit" color="primary"/>
-            <q-btn label="Limpiar" type="reset" color="primary" flat />
+            <q-btn label="Aplicar filtros" type="submit" color="primary" icon="filter_list"/>
+            <q-btn label="Limpiar filtros" type="reset" color="negative" flat icon="delete" />
           </div>
         </div>
       </div>
@@ -273,6 +279,13 @@ import { ref, computed, onMounted } from 'vue'
 import registrosService from 'src/services/registros.service'
 
 export default {
+  props: {
+    tipo: {
+      type: String,
+      default: 'registros', // 'registros', 'ausencias', 'control_horas'
+      validator: (value) => ['registros', 'ausencias', 'control_horas'].includes(value)
+    }
+  },
   emits: ['filtros-aplicados', 'filtros-reseteados'],
   
   setup (props, { emit }) {
@@ -292,15 +305,31 @@ export default {
 
     // Computed para verificar si hay filtros activos
     const hayFiltrosActivos = computed(() => {
-      return !!(
-        empresa.value ||
-        usuarioAsignado.value ||
-        rubro.value ||
-        tarea.value ||
-        fechaDesde.value ||
-        fechaHasta.value ||
-        anioContable.value
-      )
+      if (props.tipo === 'control_horas') {
+        return !!(
+          usuarioAsignado.value ||
+          fechaDesde.value ||
+          fechaHasta.value
+        )
+      } else if (props.tipo === 'ausencias') {
+        return !!(
+          empresa.value ||
+          usuarioAsignado.value ||
+          fechaDesde.value ||
+          fechaHasta.value
+        )
+      } else {
+        // registros
+        return !!(
+          empresa.value ||
+          usuarioAsignado.value ||
+          rubro.value ||
+          tarea.value ||
+          fechaDesde.value ||
+          fechaHasta.value ||
+          anioContable.value
+        )
+      }
     })
 
     // Función para mostrar/ocultar filtros
@@ -323,25 +352,34 @@ export default {
     // Cargar datos iniciales
     async function cargarDatosFiltros() {
       try {
-        // Cargar todos los datos en paralelo
-        const [empresasData, rubrosData, tareasData, usuariosData] = await Promise.all([
-          registrosService.getEmpresas(),
-          registrosService.getRubros(),
-          registrosService.getTareas(),
-          registrosService.getUsuariosAsignados()
-        ])
+        if (props.tipo === 'control_horas') {
+          // Solo cargar usuarios para control de horas
+          const usuariosData = await registrosService.getUsuariosAsignados()
+          usuariosCompletos.value = usuariosData
+          opcionesUsuarios.value = []
+        } else {
+          // Cargar todos los datos en paralelo para registros y ausencias
+          const [empresasData, rubrosData, tareasData, usuariosData] = await Promise.all([
+            registrosService.getEmpresas(),
+            registrosService.getRubros(),
+            registrosService.getTareas(),
+            registrosService.getUsuariosAsignados()
+          ])
 
-        // Guardar datos completos
-        empresasCompletas.value = empresasData
-        rubrosCompletos.value = rubrosData
-        tareasCompletas.value = tareasData
-        usuariosCompletos.value = usuariosData
+          // Guardar datos completos
+          empresasCompletas.value = empresasData
+          rubrosCompletos.value = rubrosData
+          tareasCompletas.value = tareasData
+          usuariosCompletos.value = usuariosData
 
-        // Inicializar opciones (vacías hasta que el usuario busque)
-        opcionesEmpresas.value = []
+          // Inicializar opciones (vacías hasta que el usuario busque)
+          opcionesEmpresas.value = []
+          opcionesRubros.value = []
+          opcionesTareas.value = []
+        }
+        
+        // Inicializar opciones de usuarios (siempre necesario)
         opcionesUsuarios.value = []
-        opcionesRubros.value = []
-        opcionesTareas.value = []
       } catch (error) {
         console.error('Error al cargar datos de filtros:', error)
         $q.notify({

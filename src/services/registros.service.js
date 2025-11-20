@@ -1,6 +1,5 @@
 // src/services/registros.service.js
 import { api } from 'boot/axios'
-
 /**
  * Servicio para manejar las peticiones relacionadas con registros
  */

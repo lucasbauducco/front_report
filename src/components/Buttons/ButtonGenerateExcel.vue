@@ -23,11 +23,20 @@
 import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { registrosService } from 'src/services/registros.service'
+import { ausenciasService } from 'src/services/ausencias.service'
+import { controlhorasService } from 'src/services/controlhoras.service'
 
 export default {
   name: 'ButtonGenerateExcel',
 
   props: {
+    // Tipo de Excel a generar: 'registros', 'ausencias', 'control_horas', etc.
+    tipo: {
+      type: String,
+      default: 'registros',
+      validator: (value) => ['registros', 'ausencias', 'control_horas'].includes(value)
+    },
+    
     // Datos a exportar (ya no es tan necesario, pero lo mantenemos por compatibilidad)
     data: {
       type: Array,
@@ -75,20 +84,62 @@ export default {
     const enProceso = computed(() => loading.value || generando.value)
 
     /**
+     * Obtiene el servicio correspondiente según el tipo
+     */
+    const obtenerServicio = () => {
+      switch (props.tipo) {
+        case 'registros':
+          return registrosService
+        case 'ausencias':
+          return ausenciasService
+        case 'control_horas':
+          return controlhorasService
+        default:
+          console.warn(`Tipo de Excel no reconocido: ${props.tipo}, usando registros por defecto`)
+          return registrosService
+      }
+    }
+
+    /**
      * Mapea los filtros del frontend al formato esperado por el backend
      */
     const mapearFiltrosParaBackend = (filtros) => {
       const filtrosBackend = {}
       
-      // Mapeo de nombres de filtros
-      const mapeo = {
-        empresa: 'subempresa_id',
-        usuario: 'userbase_id',
-        rubro: 'subrubro_id',
-        tarea: 'tarea_id',
-        fecha_desde: 'fecha_desde',
-        fecha_hasta: 'fecha_hasta',
-        ano_contable: 'ano_contable'
+      // Mapeo de nombres de filtros según el tipo
+      let mapeo = {}
+      
+      if (props.tipo === 'registros') {
+        mapeo = {
+          empresa: 'subempresa_id',
+          usuario: 'userbase_id',
+          rubro: 'subrubro_id',
+          tarea: 'tarea_id',
+          fecha_desde: 'fecha_desde',
+          fecha_hasta: 'fecha_hasta',
+          ano_contable: 'ano_contable'
+        }
+      } else if (props.tipo === 'ausencias') {
+        mapeo = {
+          empresa: 'empresa',
+          usuario: 'usuario',
+          rubro: 'rubro',
+          tarea: 'tarea',
+          fecha_desde: 'fecha_desde',
+          fecha_hasta: 'fecha_hasta',
+          anioContable: 'ano_contable',
+          tipo_ausencia: 'tipo_ausencia',
+          motivo: 'motivo',
+          activo: 'activo'
+        }
+      } else if (props.tipo === 'control_horas') {
+        mapeo = {
+          usuario: 'usuario',
+          fecha_desde: 'fecha_desde',
+          fecha_hasta: 'fecha_hasta',
+          estado: 'estado',
+          activo: 'activo'
+        }
       }
       
       // Aplicar mapeo
@@ -113,15 +164,25 @@ export default {
       emit('generation-started')
 
       try {
-        console.log('🔄 Iniciando generación de Excel en el backend...')
+        const servicio = obtenerServicio()
+        console.log(`🔄 Iniciando generación de Excel de ${props.tipo} en el backend...`)
         console.log('📋 Filtros a enviar:', props.filters)
         
         // Mapear filtros al formato del backend
         const filtrosBackend = mapearFiltrosParaBackend(props.filters)
         console.log('📤 Filtros mapeados:', filtrosBackend)
         
-        // Llamar al endpoint de generación
-        const response = await registrosService.generarExcelRegistros(filtrosBackend)
+        // Llamar al endpoint de generación según el tipo
+        let response
+        if (props.tipo === 'registros') {
+          response = await servicio.generarExcelRegistros(filtrosBackend)
+        } else if (props.tipo === 'ausencias') {
+          response = await servicio.generarExcelAusencias(filtrosBackend)
+        } else if (props.tipo === 'control_horas') {
+          response = await servicio.generarExcelControlHoras(filtrosBackend)
+        } else {
+          throw new Error(`Tipo de Excel no soportado: ${props.tipo}`)
+        }
         
         console.log('✅ Respuesta del servidor:', response)
         
@@ -137,13 +198,14 @@ export default {
         })
 
         // Emitir evento de completado con información del archivo
-        emit('export-completed', response.archivo?.nombre_archivo || 'registros.xlsx')
+        const nombreArchivo = response.archivo?.nombre_archivo || `${props.tipo}.xlsx`
+        emit('export-completed', nombreArchivo)
         
         // El estado "generando" se mantendrá activo hasta que el padre lo desactive
         // cuando detecte que el archivo está listo
         
       } catch (error) {
-        console.error('❌ Error al generar Excel:', error)
+        console.error(`❌ Error al generar Excel de ${props.tipo}:`, error)
         
         // Manejar diferentes tipos de errores
         let mensaje = 'Error al generar el archivo Excel'
@@ -157,7 +219,7 @@ export default {
           // Error de respuesta del servidor
           if (error.response.status === 404) {
             mensaje = 'No hay registros para exportar'
-            detalle = error.response.data?.detail || 'No se encontraron registros con los filtros aplicados'
+            detalle = error.response.data?.detail || `No se encontraron ${props.tipo} con los filtros aplicados`
           } else if (error.response.status === 401) {
             mensaje = 'No autorizado'
             detalle = 'Debes iniciar sesión para generar el Excel'
@@ -211,4 +273,3 @@ export default {
 <style scoped>
 /* Estilos opcionales */
 </style>
-

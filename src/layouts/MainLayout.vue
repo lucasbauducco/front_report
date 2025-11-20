@@ -102,6 +102,9 @@
     <q-page-container class="report-page-container">
       <router-view />
     </q-page-container>
+
+    <!-- Componente Reloj Flotante -->
+    <RelojComponent />
   </q-layout>
 </template>
 
@@ -111,6 +114,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { LOGO_PATH, LOGO_ALT, COMPANY_NAME } from 'src/config/branding'
 import { user_detail, logout } from 'src/utils/auth'
 import { useQuasar } from 'quasar'
+import RelojComponent from 'src/components/RelojComponent.vue'
 
 const leftDrawerOpen = ref(false)
 const $q = useQuasar()
@@ -134,6 +138,16 @@ const menuItems = [
     label: 'Inicio',
     icon: 'dashboard',
     route: { name: 'index' }
+  },
+  {
+    label: 'Licencias',
+    icon: 'badge',
+    route: { name: 'licencias' }
+  },
+  {
+    label: 'Control de Horas',
+    icon: 'access_time',
+    route: { name: 'controlhoras' }
   },
   {
     label: 'Perfil',
@@ -264,23 +278,22 @@ function handleLogout() {
 
 /* Colores de fondo usando la paleta report */
 .report-header {
-  background: $report-purple-medium !important; /* Morado oscuro principal */
+  background: linear-gradient(100deg, $report-purple-medium 10%, $secondary 20%, $primary 100%);
 }
 
 .report-page-container {
-  background: $report-purple-low !important; /* Lavanda claro para el fondo del main */
+  background: $report-purple-low; /* Lavanda claro para el fondo del main */
   min-height: 100vh;
 }
 
 /* Estilos del menú lateral report */
 .report-drawer {
-  background: linear-gradient(200deg, $primary 25%, $secondary 50%, $report-purple-medium 75%);
+  background: linear-gradient(100deg, $report-purple-medium 10%, $secondary 20%, $primary 100%);
   border-right: 2px solid $report-lavender;
 }
 
 .report-menu-header {
-  background: linear-gradient(200deg, $primary 25%, $secondary 50%, $report-purple-medium 75%);
-  color: $report-white !important;
+  color: $report-white;
   text-align: center;
   font-weight: 600;
   font-size: 1rem;
@@ -292,7 +305,11 @@ function handleLogout() {
   
   .q-icon {
     font-size: 1.5rem;
-    color: $report-white;
+    background: linear-gradient(200deg, $primary 25%, $secondary 50%, $report-purple-medium 75%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-fill-color: transparent;
   }
 }
 

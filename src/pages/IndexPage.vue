@@ -1,8 +1,8 @@
 <template>
-  <RegistrosPage />
+  <RegistrosTable />
 </template>
 
 <script setup>
-import RegistrosPage from './RegistrosPage.vue'
+import RegistrosTable from 'src/components/Tables/RegistrosTable.vue'
 </script>
 

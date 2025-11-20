@@ -14,9 +14,11 @@ const routes = [
     children: [
       {path: '', name: 'index', component: () => import('pages/IndexPage.vue')},
       {path: 'registros', name: 'registros', component: () => import('pages/IndexPage.vue')},
+      {path: 'licencias', name: 'licencias', component: () => import('pages/LicenciasPage.vue')},
+      {path: 'control_horas', name: 'controlhoras', component: () => import('pages/ControlHorasPage.vue') },
     ]
   },
-  {path: '/:catchAll(.*)*', component: () => import('pages/ErrorNotFound.vue'), meta: {requiresAuth: true}}
-]
+  { path: '/:catchAll(.*)*', component: () => import('src/pages/Errors/ErrorNotFound.vue'), meta: { requiresAuth: true } }
+];
 
-export default routes
+export default routes;

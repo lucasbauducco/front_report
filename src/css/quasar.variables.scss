@@ -13,30 +13,30 @@
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
 // ============================================
-// Paleta de Colores report
+// Paleta de Colores Nimbus Argentina
 // ============================================
-// Colores del Logo
-$report-purple-dark   : #7B04BA;   // PANTONE 2084 C - Color principal del fondo del logo
-$report-purple-medium : #8e61fa;   // PANTONE 2101 C - Color de la nube morada
-$report-purple-low    : #bbb8c4;   // Color claro/fondo muy suave (low)
-$report-white         : #FFFFFF;   // Color del texto/iconos blancos
+// Colores principales del branding
+$report-purple-dark   : #7B04BA;   // Morado intenso Nimbus (primario - RGB: 123, 4, 186)
+$report-purple-medium : #8E61FA;   // Morado medio Nimbus (secundario - RGB: 142, 97, 250)
+$report-purple-low    : #e8dcfa;   // Lavanda suave (fondo/acento claro)
+$report-white         : #ffffff;   // Blanco puro para textos/iconos
 
 // Colores Adicionales de la Paleta
-$report-lavender      : #B8A9E6;   // Color secundario suave (lavanda claro)
-$report-purple-deep   : #5a0388;   // Color de contraste alto (morado muy oscuro - derivado del primary)
-$report-cyan          : #6BC5D4;   // Color de acento (cian report)
+$report-lavender      : #9F6CFA;   // Lavanda vibrante (detalle/acento)
+$report-purple-deep   : #6003A0;   // Morado profundo (contraste institucional)
+$report-cyan          : #A884FA;   // Lavanda clara (acento delicado)
 
 // ============================================
-// Variables de Quasar (aplicando paleta report)
+// Variables de Quasar (aplicando paleta Nimbus Argentina)
 // ============================================
-$primary   : #7B04BA;   // PANTONE 2084 C - Morado oscuro (color principal empresarial)
-$secondary : #8e61fa;   // PANTONE 2101 C - Morado medio (color secundario empresarial)
-$accent    : #6BC5D4;   // Cian report (color de acento)
+$primary   : #7B04BA;   // Morado intenso Nimbus
+$secondary : #8E61FA;   // Morado medio Nimbus
+$accent    : #9F6CFA;   // Lavanda vibrante (acento)
 
-$dark      : #5a0388;   // Morado muy oscuro (derivado del primary para modo oscuro)
-$dark-page : #1D1D1D;   // Negro suave (fondo de página oscura)
+$dark      : #4A0270;   // Morado muy oscuro (modo oscuro)
+$dark-page : #6003A0;   // Morado profundo para fondo de página
 
-$positive  : #21BA45;   // Verde (mantener para éxito)
-$negative  : #C10015;   // Rojo (mantener para errores)
-$info      : #6BC5D4;   // Cian report (usar para información)
-$warning   : #F2C037;   // Amarillo (mantener para advertencias)
+$positive  : #43A047;   // Verde (mantener para éxito)
+$negative  : #C62828;   // Rojo (mantener para errores)
+$info      : #8E61FA;   // Morado medio Nimbus (información)
+$warning   : #F59E0B;   // Amarillo/naranja (advertencia)

@@ -7,6 +7,35 @@ import { LocalStorage } from 'quasar'
 export const isLoggedIn = ref(false)
 export const user_detail = ref(null)
 
+// Función para normalizar los datos del usuario
+const normalizeUserData = (userData) => {
+  if (!userData) return null
+  
+  // Crear una copia del objeto para no mutar el original
+  const normalized = { ...userData }
+  
+  // Mapear nombre/apellido a first_name/last_name para compatibilidad
+  if (normalized.nombre && !normalized.first_name) {
+    normalized.first_name = normalized.nombre
+  }
+  if (normalized.apellido && !normalized.last_name) {
+    normalized.last_name = normalized.apellido
+  }
+  
+  // Si existe nombre_completo pero no first_name/last_name, intentar dividirlo
+  if (normalized.nombre_completo && !normalized.first_name && !normalized.last_name) {
+    const parts = normalized.nombre_completo.trim().split(/\s+/)
+    if (parts.length > 0) {
+      normalized.first_name = parts[0]
+      if (parts.length > 1) {
+        normalized.last_name = parts.slice(1).join(' ')
+      }
+    }
+  }
+  
+  return normalized
+}
+
 // Función para cargar los detalles del usuario
 export const loadUserDetail = async () => {
   try {
@@ -19,10 +48,10 @@ export const loadUserDetail = async () => {
     }
 
     // Hacer petición para obtener detalles del usuario
-    // Ajusta esta ruta según tu API de Django
     const response = await api.get('/user/me/')
     
-    user_detail.value = response.data
+    // Normalizar los datos antes de guardarlos
+    user_detail.value = normalizeUserData(response.data)
     isLoggedIn.value = true
     
     return true
@@ -44,9 +73,7 @@ export const isAdmin = async () => {
   }
   
   // Verificar si el usuario tiene rol de administrador
-  // Ajusta esto según la estructura de tu API
   return user_detail.value?.is_admin === true || 
-         user_detail.value?.role === 'admin' ||
          user_detail.value?.is_staff === true ||
          user_detail.value?.is_superuser === true
 }
@@ -63,8 +90,9 @@ export const login = (accessToken, refreshToken, userData = null) => {
   console.log('✅ isLoggedIn establecido a true')
   
   if (userData) {
-    user_detail.value = userData
-    console.log('✅ Datos de usuario guardados:', userData)
+    // Normalizar los datos del usuario antes de guardarlos
+    user_detail.value = normalizeUserData(userData)
+    console.log('✅ Datos de usuario guardados:', user_detail.value)
   } else {
     // Intentar cargar detalles del usuario (opcional, no bloquea el login)
     console.log('🔄 Intentando cargar detalles del usuario...')
