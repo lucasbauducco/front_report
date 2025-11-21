@@ -59,18 +59,18 @@
                 filled
                 v-model="formData.userbase_id"
                 use-input
-                hide-selected
-                fill-input
                 input-debounce="0"
                 :options="opcionesUsuarios"
                 @filter="filterUsuarios"
+                @update:model-value="cargarDatosUsuarioSeleccionado"
                 option-value="id"
                 :option-label="(usr) => obtenerNombreCompleto(usr)"
                 emit-value
                 map-options
-                :hint="esModoEdicion ? 'Usuario*' : 'Usuario (opcional - si no se selecciona, se usa el usuario autenticado)'"
+                :disable="!puedeSeleccionarUsuario && !esModoEdicion"
+                :hint="esModoEdicion ? 'Usuario*' : (puedeSeleccionarUsuario ? 'Usuario (opcional - si no se selecciona, se usa el usuario autenticado)' : 'Usuario (opcional - si no se selecciona, se usa el usuario autenticado)')"
                 :rules="esModoEdicion ? [val => !!val || 'El usuario es requerido'] : []"
-                :clearable="!esModoEdicion"
+                :clearable="!esModoEdicion && puedeSeleccionarUsuario"
               >
                 <template v-slot:no-option>
                   <q-item>
@@ -88,8 +88,6 @@
                 filled
                 v-model="formData.sucursal_id"
                 use-input
-                hide-selected
-                fill-input
                 input-debounce="0"
                 :options="opcionesSucursales"
                 @filter="filterSucursales"
@@ -117,8 +115,7 @@
                 filled
                 v-model="formData.empresas_id"
                 use-input
-                hide-selected
-                fill-input
+                use-chips
                 input-debounce="0"
                 :options="opcionesEmpresas"
                 @filter="filterEmpresas"
@@ -146,8 +143,6 @@
                 filled
                 v-model="formData.empresa_id"
                 use-input
-                hide-selected
-                fill-input
                 input-debounce="0"
                 :options="opcionesEmpresas"
                 @filter="filterEmpresas"
@@ -221,8 +216,6 @@
                 filled
                 v-model="formData.tarea_id"
                 use-input
-                hide-selected
-                fill-input
                 input-debounce="0"
                 :options="opcionesTareas"
                 @filter="filterTareas"
@@ -242,7 +235,53 @@
                 </template>
               </q-select>
             </div>
+          </div>
 
+          <!-- Banner de carga de horas faltantes -->
+          <q-banner
+            v-if="!esModoEdicion && cargandoHorasFaltantes"
+            class="bg-grey-7 text-white q-mt-md"
+          >
+            <template v-slot:avatar>
+              <q-spinner-dots color="white" size="2em" />
+            </template>
+            <div class="text-weight-bold">Cargando información de horas...</div>
+          </q-banner>
+
+          <!-- Banner de horas faltantes (solo en modo crear) -->
+          <q-banner
+            v-if="!esModoEdicion && !cargandoHorasFaltantes && horasFaltantes && horasFaltantes.horas_faltantes > 0"
+            class="bg-warning text-white q-mt-md"
+          >
+            <template v-slot:avatar>
+              <q-icon name="schedule" />
+            </template>
+            <div class="text-weight-bold">Horas pendientes de registro:</div>
+            <div class="q-mt-sm">
+              Te faltan <strong>{{ horasFaltantesFormateado }}</strong> por registrar para esta fecha
+              <br>
+              <span class="text-caption">
+                Horas esperadas: {{ horasFaltantes.horas_esperadas || 0 }}h | 
+                Horas registradas: {{ horasFaltantes.horas_registradas || 0 }}h
+              </span>
+            </div>
+          </q-banner>
+
+          <!-- Banner de horas completas (solo en modo crear) -->
+          <q-banner
+            v-if="!esModoEdicion && !cargandoHorasFaltantes && horasFaltantes && horasFaltantes.horas_faltantes === 0 && horasFaltantes.horas_esperadas > 0"
+            class="bg-positive text-white q-mt-md"
+          >
+            <template v-slot:avatar>
+              <q-icon name="check_circle" />
+            </template>
+            <div class="text-weight-bold">¡Horas completas!</div>
+            <div class="q-mt-sm">
+              Ya has registrado todas las horas esperadas para esta fecha ({{ horasFaltantes.horas_esperadas }}h)
+            </div>
+          </q-banner>
+
+          <div class="row q-gutter-md q-mt-md">
             <!-- Cantidad de horas (modo crear) -->
             <template v-if="!esModoEdicion">
               <div class="col-12 col-sm-6 col-md-4">
@@ -367,9 +406,11 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import registrosService from 'src/services/registros.service'
+import ausenciasService from 'src/services/ausencias.service'
+import { user_detail } from 'src/utils/auth'
 
 const props = defineProps({
   modelValue: {
@@ -390,8 +431,24 @@ const $q = useQuasar()
 const esModoEdicion = computed(() => !!props.registro && !!props.registro.id)
 const registroId = computed(() => props.registro?.id || null)
 
+// Computed para verificar si el usuario tiene permisos para seleccionar otros usuarios
+const puedeSeleccionarUsuario = computed(() => {
+  if (!user_detail.value) return false
+  
+  // Verificar si el usuario es admin, staff o subadministrador
+  const esAdmin = user_detail.value.is_superuser === true || user_detail.value.is_superuser === 1
+  const esStaff = user_detail.value.is_staff === true || user_detail.value.is_staff === 1
+  const esSubadministrador = user_detail.value.is_subadministrador === true || user_detail.value.is_subadministrador === 1
+  
+  return esAdmin || esStaff || esSubadministrador
+})
+
 // Estado del formulario
 const guardando = ref(false)
+
+// Estado para horas faltantes
+const horasFaltantes = ref(null)
+const cargandoHorasFaltantes = ref(false)
 
 // Datos del formulario (unificado para ambos modos)
 const formData = ref({
@@ -459,6 +516,34 @@ const horasPorSubempresa = computed(() => {
   }
   const horasPorRegistro = totalHoras.value / formData.value.empresas_id.length
   return horasPorRegistro.toFixed(2)
+})
+
+// Computed para verificar si debe cargar horas faltantes
+const debeCargarHorasFaltantes = computed(() => {
+  // Solo en modo crear
+  if (esModoEdicion.value) return false
+  
+  // Debe tener usuario y fecha
+  const tieneUsuario = !!formData.value.userbase_id
+  const tieneFecha = !!formData.value.fecha && validarFecha(formData.value.fecha)
+  
+  return tieneUsuario && tieneFecha
+})
+
+// Formatear horas faltantes para mostrar
+const horasFaltantesFormateado = computed(() => {
+  if (!horasFaltantes.value || horasFaltantes.value.horas_faltantes === undefined) {
+    return null
+  }
+  
+  const horas = horasFaltantes.value.horas_faltantes
+  const horasEnteras = Math.floor(horas)
+  const minutos = Math.round((horas - horasEnteras) * 60)
+  
+  if (minutos === 0) {
+    return `${horasEnteras} ${horasEnteras === 1 ? 'hora' : 'horas'}`
+  }
+  return `${horasEnteras} ${horasEnteras === 1 ? 'hora' : 'horas'} y ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}`
 })
 
 // Validar formato de fecha YYYY-MM-DD
@@ -646,6 +731,7 @@ function obtenerNombreCompleto(usuario) {
 // Cargar datos iniciales
 async function cargarDatos() {
   try {
+    // Cargar datos generales
     const [empresasData, tareasData, usuariosData, sucursalesData] = await Promise.all([
       registrosService.getEmpresas(),
       registrosService.getTareas(),
@@ -658,11 +744,71 @@ async function cargarDatos() {
     usuariosCompletos.value = usuariosData
     sucursalesCompletas.value = sucursalesData || []
 
-    // Inicializar opciones
-    opcionesEmpresas.value = []
-    opcionesTareas.value = []
-    opcionesUsuarios.value = []
-    opcionesSucursales.value = []
+    // Inicializar opciones con las primeras 20 de cada lista para que los selectores funcionen correctamente
+    opcionesTareas.value = tareasCompletas.value.slice(0, 20)
+    opcionesUsuarios.value = usuariosCompletos.value.slice(0, 20)
+    opcionesSucursales.value = sucursalesCompletas.value.slice(0, 20)
+
+    // Pre-cargar las subempresas del usuario logeado si no está en modo edición
+    if (!esModoEdicion.value && user_detail.value && user_detail.value.id) {
+      try {
+        // Obtener los datos de empresa del usuario desde el endpoint específico
+        const usuarioEmpresaData = await registrosService.getUsuarioEmpresaData(user_detail.value.id)
+        
+        // Extraer las subempresas del usuario
+        const subempresasUsuario = []
+        
+        if (usuarioEmpresaData.empresas && Array.isArray(usuarioEmpresaData.empresas)) {
+          // Recorrer cada empresa y extraer sus subempresas
+          usuarioEmpresaData.empresas.forEach(empresa => {
+            if (empresa.subempresas && Array.isArray(empresa.subempresas)) {
+              subempresasUsuario.push(...empresa.subempresas)
+            }
+          })
+        }
+        
+        // Si hay subempresas, pre-cargar la primera en las opciones
+        if (subempresasUsuario.length > 0) {
+          // Buscar las subempresas en la lista completa de empresas
+          const subempresasEncontradas = empresasData.filter(e => 
+            subempresasUsuario.some(sub => sub.id === e.id)
+          )
+          
+          if (subempresasEncontradas.length > 0) {
+            // Pre-cargar todas las subempresas del usuario en las opciones
+            opcionesEmpresas.value = subempresasEncontradas
+          } else {
+            opcionesEmpresas.value = empresasCompletas.value.slice(0, 20)
+          }
+        } else {
+          opcionesEmpresas.value = empresasCompletas.value.slice(0, 20)
+        }
+      } catch (error) {
+        console.warn('No se pudieron cargar las subempresas del usuario:', error)
+        console.warn('Detalles del error:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message
+        })
+        opcionesEmpresas.value = empresasCompletas.value.slice(0, 20)
+        
+        // Notificar al usuario solo si no es un error 500 (para evitar spam de notificaciones)
+        // El error 500 generalmente indica un problema del backend que el usuario no puede resolver
+        if (error.response?.status && error.response.status !== 500) {
+          $q.notify({
+            color: 'warning',
+            textColor: 'white',
+            icon: 'warning',
+            message: 'No se pudieron cargar las subempresas asociadas a tu usuario',
+            caption: 'Puedes seleccionar manualmente las subempresas de la lista',
+            position: 'top',
+            timeout: 4000
+          })
+        }
+      }
+    } else {
+      opcionesEmpresas.value = empresasCompletas.value.slice(0, 20)
+    }
   } catch (error) {
     console.error('Error al cargar datos:', error)
     $q.notify({
@@ -756,64 +902,95 @@ function cargarDatosRegistro() {
 
   console.log('✅ Datos cargados en formulario:', formData.value)
 
-  // Cargar opciones iniciales
-  setTimeout(() => {
-    // Sucursal
-    if (sucursalId) {
-      const sucursalObj = obtenerObjeto(registro.sucursal)
-      if (sucursalObj) {
-        opcionesSucursales.value = [sucursalObj]
-      } else if (sucursalesCompletas.value.length > 0) {
-        const encontrada = sucursalesCompletas.value.find(s => s.id === sucursalId)
-        if (encontrada) {
-          opcionesSucursales.value = [encontrada]
+  // Cargar opciones iniciales - asegurarse de que las opciones incluyan los valores seleccionados
+  // Sucursal
+  if (sucursalId) {
+    const sucursalObj = obtenerObjeto(registro.sucursal)
+    if (sucursalObj) {
+      // Incluir el objeto sucursal en las opciones si no está ya
+      const yaIncluida = opcionesSucursales.value.some(s => s.id === sucursalId)
+      if (!yaIncluida) {
+        opcionesSucursales.value = [sucursalObj, ...opcionesSucursales.value]
+      }
+    } else if (sucursalesCompletas.value.length > 0) {
+      const encontrada = sucursalesCompletas.value.find(s => s.id === sucursalId)
+      if (encontrada) {
+        const yaIncluida = opcionesSucursales.value.some(s => s.id === sucursalId)
+        if (!yaIncluida) {
+          opcionesSucursales.value = [encontrada, ...opcionesSucursales.value]
         }
       }
     }
+  }
 
-    // Usuario
-    if (usuarioId) {
-      const usuarioObj = obtenerObjeto(registro.usuario)
-      if (usuarioObj) {
-        opcionesUsuarios.value = [usuarioObj]
-      } else if (usuariosCompletos.value.length > 0) {
-        const encontrado = usuariosCompletos.value.find(u => 
+  // Usuario
+  if (usuarioId) {
+    const usuarioObj = obtenerObjeto(registro.usuario)
+    if (usuarioObj) {
+      const yaIncluido = opcionesUsuarios.value.some(u => 
+        u.id === usuarioId || u.userbase_id === usuarioId || u.usuario_id === usuarioId
+      )
+      if (!yaIncluido) {
+        opcionesUsuarios.value = [usuarioObj, ...opcionesUsuarios.value]
+      }
+    } else if (usuariosCompletos.value.length > 0) {
+      const encontrado = usuariosCompletos.value.find(u => 
+        u.id === usuarioId || u.userbase_id === usuarioId || u.usuario_id === usuarioId
+      )
+      if (encontrado) {
+        const yaIncluido = opcionesUsuarios.value.some(u => 
           u.id === usuarioId || u.userbase_id === usuarioId || u.usuario_id === usuarioId
         )
-        if (encontrado) {
-          opcionesUsuarios.value = [encontrado]
+        if (!yaIncluido) {
+          opcionesUsuarios.value = [encontrado, ...opcionesUsuarios.value]
         }
       }
     }
+  }
 
-    // Subempresa
-    if (empresaId) {
-      const empresaObj = obtenerObjeto(registro.subempresa || registro.empresa)
-      if (empresaObj) {
-        opcionesEmpresas.value = [empresaObj]
-      } else if (empresasCompletas.value.length > 0) {
-        const encontrada = empresasCompletas.value.find(e => e.id === empresaId)
-        if (encontrada) {
-          opcionesEmpresas.value = [encontrada]
+  // Subempresa
+  if (empresaId) {
+    const empresaObj = obtenerObjeto(registro.subempresa || registro.empresa)
+    if (empresaObj) {
+      const yaIncluida = opcionesEmpresas.value.some(e => e.id === empresaId)
+      if (!yaIncluida) {
+        opcionesEmpresas.value = [empresaObj, ...opcionesEmpresas.value]
+      }
+    } else if (empresasCompletas.value.length > 0) {
+      const encontrada = empresasCompletas.value.find(e => e.id === empresaId)
+      if (encontrada) {
+        const yaIncluida = opcionesEmpresas.value.some(e => e.id === empresaId)
+        if (!yaIncluida) {
+          opcionesEmpresas.value = [encontrada, ...opcionesEmpresas.value]
         }
       }
     }
+  }
 
-    // Tarea
-    if (tareaId) {
-      const tareaObj = obtenerObjeto(registro.tarea || registro.subrubro)
-      if (tareaObj) {
-        opcionesTareas.value = [tareaObj]
-      } else if (tareasCompletas.value.length > 0) {
-        const encontrada = tareasCompletas.value.find(t => 
+  // Tarea
+  if (tareaId) {
+    const tareaObj = obtenerObjeto(registro.tarea || registro.subrubro)
+    if (tareaObj) {
+      const yaIncluida = opcionesTareas.value.some(t => 
+        t.id === tareaId || t.subrubro_id === tareaId || t.tarea_id === tareaId
+      )
+      if (!yaIncluida) {
+        opcionesTareas.value = [tareaObj, ...opcionesTareas.value]
+      }
+    } else if (tareasCompletas.value.length > 0) {
+      const encontrada = tareasCompletas.value.find(t => 
+        t.id === tareaId || t.subrubro_id === tareaId || t.tarea_id === tareaId
+      )
+      if (encontrada) {
+        const yaIncluida = opcionesTareas.value.some(t => 
           t.id === tareaId || t.subrubro_id === tareaId || t.tarea_id === tareaId
         )
-        if (encontrada) {
-          opcionesTareas.value = [encontrada]
+        if (!yaIncluida) {
+          opcionesTareas.value = [encontrada, ...opcionesTareas.value]
         }
       }
     }
-  }, 500)
+  }
 }
 
 // Métodos de filtrado
@@ -1070,9 +1247,12 @@ function resetearFormulario() {
   if (esModoEdicion.value && props.registro) {
     cargarDatosRegistro()
   } else {
+    // Si el usuario no tiene permisos, mantener su ID
+    const usuarioIdAMantener = !puedeSeleccionarUsuario.value && user_detail.value ? user_detail.value.id : null
+    
     formData.value = {
       ano_contable: new Date().getFullYear(),
-      userbase_id: null,
+      userbase_id: usuarioIdAMantener,
       sucursal_id: null,
       empresas_id: [],
       empresa_id: null,
@@ -1082,6 +1262,209 @@ function resetearFormulario() {
       cantidad_minutos: null,
       tiempo_formato: '00:00:00',
       observaciones: ''
+    }
+  }
+}
+
+// Cargar horas faltantes para el usuario y fecha seleccionados
+async function cargarHorasFaltantes() {
+  if (!debeCargarHorasFaltantes.value) {
+    horasFaltantes.value = null
+    return
+  }
+  
+  try {
+    cargandoHorasFaltantes.value = true
+    const usuarioId = formData.value.userbase_id
+    const fecha = formData.value.fecha
+    
+    console.log(`📊 Cargando horas faltantes para usuario ${usuarioId} en fecha ${fecha}...`)
+    
+    const resultado = await ausenciasService.getHorasFaltantes(fecha, usuarioId)
+    horasFaltantes.value = resultado
+    
+    console.log('✅ Horas faltantes cargadas:', resultado)
+  } catch (error) {
+    console.error('Error al cargar horas faltantes:', error)
+    horasFaltantes.value = null
+    
+    // No mostrar notificación de error para no molestar al usuario
+    // Solo registrar en consola
+  } finally {
+    cargandoHorasFaltantes.value = false
+  }
+}
+
+// Cargar datos del usuario seleccionado
+async function cargarDatosUsuarioSeleccionado(usuarioId) {
+  if (esModoEdicion.value) {
+    return
+  }
+
+  // Si se limpia el usuario, restaurar opciones por defecto
+  if (!usuarioId) {
+    console.log('🔄 Usuario limpiado, restaurando opciones por defecto...')
+    opcionesSucursales.value = sucursalesCompletas.value.slice(0, 20)
+    opcionesEmpresas.value = empresasCompletas.value.slice(0, 20)
+    
+    // Limpiar campos relacionados
+    formData.value.sucursal_id = null
+    formData.value.empresas_id = []
+    
+    // Limpiar horas faltantes
+    horasFaltantes.value = null
+    
+    return
+  }
+
+  try {
+    console.log(`📥 Cargando datos del usuario ${usuarioId}...`)
+    
+    // Asegurar que el usuario seleccionado esté en las opciones de usuarios
+    const usuarioSeleccionado = usuariosCompletos.value.find(u => 
+      u.id === usuarioId || u.userbase_id === usuarioId || u.usuario_id === usuarioId
+    )
+    
+    if (usuarioSeleccionado) {
+      // Verificar si ya está en las opciones
+      const yaEstaEnOpciones = opcionesUsuarios.value.some(u => 
+        u.id === usuarioId || u.userbase_id === usuarioId || u.usuario_id === usuarioId
+      )
+      
+      if (!yaEstaEnOpciones) {
+        // Agregar al inicio de las opciones
+        opcionesUsuarios.value = [usuarioSeleccionado, ...opcionesUsuarios.value]
+        console.log('👤 Usuario agregado a opciones:', obtenerNombreCompleto(usuarioSeleccionado))
+      }
+    }
+    
+    // Obtener los datos de empresa del usuario
+    const usuarioEmpresaData = await registrosService.getUsuarioEmpresaData(usuarioId)
+    
+    console.log('📊 Datos del usuario recibidos:', usuarioEmpresaData)
+    
+    // Extraer sucursales del usuario
+    const sucursalesUsuario = []
+    
+    // Extraer subempresas del usuario
+    const subempresasUsuario = []
+    
+    if (usuarioEmpresaData.empresas && Array.isArray(usuarioEmpresaData.empresas)) {
+      usuarioEmpresaData.empresas.forEach(empresa => {
+        // Extraer sucursales de la empresa
+        if (empresa.sucursales && Array.isArray(empresa.sucursales)) {
+          sucursalesUsuario.push(...empresa.sucursales)
+        }
+        
+        // Extraer subempresas
+        if (empresa.subempresas && Array.isArray(empresa.subempresas)) {
+          subempresasUsuario.push(...empresa.subempresas)
+        }
+      })
+    }
+    
+    // También agregar sucursales directas si existen
+    if (usuarioEmpresaData.sucursales && Array.isArray(usuarioEmpresaData.sucursales)) {
+      sucursalesUsuario.push(...usuarioEmpresaData.sucursales)
+    }
+    
+    console.log('🏢 Sucursales del usuario:', sucursalesUsuario)
+    console.log('🏭 Subempresas del usuario:', subempresasUsuario)
+    
+    // Actualizar opciones de sucursales con las del usuario
+    if (sucursalesUsuario.length > 0) {
+      // Encontrar las sucursales en la lista completa
+      const sucursalesEncontradas = sucursalesCompletas.value.filter(s => 
+        sucursalesUsuario.some(suc => suc.id === s.id)
+      )
+      
+      if (sucursalesEncontradas.length > 0) {
+        // Actualizar opciones primero
+        opcionesSucursales.value = sucursalesEncontradas
+        
+        // Esperar a que Vue actualice el DOM y luego establecer el valor
+        await nextTick()
+        
+        // Preseleccionar la primera sucursal
+        formData.value.sucursal_id = sucursalesEncontradas[0].id
+        console.log('✅ Sucursal preseleccionada:', sucursalesEncontradas[0].nombre, 'ID:', sucursalesEncontradas[0].id)
+      }
+    } else {
+      // Si no hay sucursales, restaurar opciones por defecto
+      opcionesSucursales.value = sucursalesCompletas.value.slice(0, 20)
+      formData.value.sucursal_id = null
+    }
+    
+    // Actualizar opciones de subempresas con las del usuario
+    if (subempresasUsuario.length > 0) {
+      console.log('🔍 Buscando subempresas en lista completa...')
+      console.log('🔍 Total de empresas en lista completa:', empresasCompletas.value.length)
+      console.log('🔍 IDs de subempresas del usuario:', subempresasUsuario.map(s => s.id))
+      
+      // Encontrar las subempresas en la lista completa
+      const subempresasEncontradas = empresasCompletas.value.filter(e => 
+        subempresasUsuario.some(sub => sub.id === e.id)
+      )
+      
+      console.log('🔍 Subempresas encontradas en lista completa:', subempresasEncontradas.length)
+      
+      if (subempresasEncontradas.length > 0) {
+        // Actualizar opciones primero
+        opcionesEmpresas.value = subempresasEncontradas
+        console.log('📋 Opciones de empresas actualizadas:', opcionesEmpresas.value.map(e => ({ id: e.id, nombre: e.nombre })))
+        
+        // Esperar a que Vue actualice el DOM y luego establecer el valor
+        await nextTick()
+        
+        // Preseleccionar todas las subempresas del usuario
+        formData.value.empresas_id = subempresasEncontradas.map(sub => sub.id)
+        console.log('✅ Subempresas preseleccionadas:', subempresasEncontradas.map(s => s.nombre))
+        console.log('✅ IDs de subempresas asignados a formData:', formData.value.empresas_id)
+      } else {
+        console.warn('⚠️ No se encontraron subempresas en la lista completa')
+        // Si no se encuentran en la lista completa, usar las del usuario directamente
+        opcionesEmpresas.value = subempresasUsuario
+        await nextTick()
+        formData.value.empresas_id = subempresasUsuario.map(sub => sub.id)
+        console.log('✅ Usando subempresas directamente del usuario:', subempresasUsuario.map(s => s.nombre || s.id))
+      }
+    } else {
+      console.log('ℹ️ No hay subempresas para el usuario')
+      // Si no hay subempresas, restaurar opciones por defecto
+      opcionesEmpresas.value = empresasCompletas.value.slice(0, 20)
+      formData.value.empresas_id = []
+    }
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Datos del usuario cargados correctamente',
+      caption: `${sucursalesUsuario.length} sucursal(es) y ${subempresasUsuario.length} subempresa(s) encontradas`,
+      position: 'top',
+      timeout: 2000
+    })
+  } catch (error) {
+    console.error('Error al cargar datos del usuario:', error)
+    console.error('Detalles del error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    })
+    
+    // Restaurar opciones por defecto en caso de error
+    opcionesSucursales.value = sucursalesCompletas.value.slice(0, 20)
+    opcionesEmpresas.value = empresasCompletas.value.slice(0, 20)
+    
+    // Solo mostrar notificación si no es un error 500
+    if (error.response?.status && error.response.status !== 500) {
+      $q.notify({
+        color: 'warning',
+        textColor: 'white',
+        icon: 'warning',
+        message: 'No se pudieron cargar los datos del usuario',
+        caption: 'Puedes seleccionar manualmente las opciones',
+        position: 'top',
+        timeout: 3000
+      })
     }
   }
 }
@@ -1106,9 +1489,56 @@ watch(() => props.modelValue, async (nuevoValor) => {
       const hoy = new Date()
       const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
       formData.value.fecha = fechaHoy
+      
+      // Cargar datos del usuario logeado por defecto
+      if (user_detail.value && user_detail.value.id) {
+        // Si el usuario no tiene permisos para seleccionar otros usuarios, establecer siempre su propio ID
+        if (!puedeSeleccionarUsuario.value) {
+          console.log('🔒 Usuario sin permisos para seleccionar otros usuarios. Estableciendo usuario autenticado...')
+          formData.value.userbase_id = user_detail.value.id
+        }
+        
+        // Si no hay usuario seleccionado, cargar el usuario autenticado
+        if (!formData.value.userbase_id) {
+          console.log('🔄 Cargando datos del usuario autenticado por defecto...')
+          formData.value.userbase_id = user_detail.value.id
+        }
+        
+        // Asegurar que el usuario esté en las opciones
+        const usuarioAutenticado = usuariosCompletos.value.find(u => 
+          u.id === user_detail.value.id || u.userbase_id === user_detail.value.id
+        )
+        
+        if (usuarioAutenticado) {
+          const yaEstaEnOpciones = opcionesUsuarios.value.some(u => 
+            u.id === user_detail.value.id || u.userbase_id === user_detail.value.id
+          )
+          
+          if (!yaEstaEnOpciones) {
+            opcionesUsuarios.value = [usuarioAutenticado, ...opcionesUsuarios.value]
+            console.log('👤 Usuario autenticado agregado a opciones:', obtenerNombreCompleto(usuarioAutenticado))
+          }
+        }
+        
+        // Esperar a que se actualice el DOM
+        await nextTick()
+        
+        // Cargar los datos asociados al usuario
+        await cargarDatosUsuarioSeleccionado(formData.value.userbase_id)
+        
+        // Cargar horas faltantes si aplica
+        await cargarHorasFaltantes()
+      }
     }
   }
 })
+
+// Watch para cargar horas faltantes cuando cambia el usuario o la fecha
+watch([() => formData.value.userbase_id, () => formData.value.fecha], async () => {
+  if (!esModoEdicion.value) {
+    await cargarHorasFaltantes()
+  }
+}, { deep: false })
 
 watch(() => props.registro, (nuevoRegistro) => {
   if (nuevoRegistro && props.modelValue) {

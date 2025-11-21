@@ -159,6 +159,12 @@
               </q-input>
             </div>
 
+            <!-- Información de horas faltantes -->
+            <AusenciaHorasbanner 
+              :fecha="formData.fecha_desde"
+              :usuario-id="formData.usuario"
+            />
+
             <!-- Checkbox: Ausencia mayor a un día -->
             <div class="col-12 col-sm-6 col-md-4">
               <q-checkbox
@@ -232,6 +238,8 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { ausenciasService } from 'src/services/ausencias.service'
+import { user_detail } from 'src/utils/auth'
+import AusenciaHorasbanner from 'src/components/Banners/AusenciaHorasbanner.vue'
 
 const props = defineProps({
   modelValue: {
@@ -282,66 +290,32 @@ const tiposAusencia = [
 // Opciones de motivos (se cargan desde el backend)
 const motivos = ref([])
 
-// Función auxiliar para obtener ID de un objeto
-function obtenerId(obj, posiblesKeys = ['id', 'userbase_id', 'usuario_id']) {
-  if (!obj) return null
-  if (typeof obj === 'number') return obj
-  if (typeof obj === 'object') {
-    for (const key of posiblesKeys) {
-      if (obj[key] !== undefined && obj[key] !== null) {
-        return obj[key]
-      }
-    }
+// Función para obtener nombre completo del usuario (sin cambios)
+function obtenerNombreCompleto(usuario) {
+  if (!usuario) return ''
+  if (usuario.nombre_completo) {
+    return usuario.nombre_completo
   }
-  return null
+  if (usuario.nombre && usuario.apellido) {
+    return `${usuario.nombre} ${usuario.apellido}`.trim()
+  }
+  if (usuario.nombre) {
+    return usuario.nombre
+  }
+  if (usuario.first_name && usuario.last_name) {
+    return `${usuario.first_name} ${usuario.last_name}`.trim()
+  }
+  if (usuario.first_name) {
+    return usuario.first_name
+  }
+  return usuario.username || 'Sin nombre'
 }
 
-  // Función auxiliar para obtener objeto completo
-  function obtenerObjeto(obj, fallbackId = null) {
-    if (!obj) return null
-    if (typeof obj === 'number') {
-      return null
-    }
-    if (typeof obj === 'object') {
-      return obj
-    }
-    return null
-  }
-
-  // Función para obtener nombre completo del usuario
-  function obtenerNombreCompleto(usuario) {
-    if (!usuario) return ''
-    // Si tiene nombre_completo, usarlo
-    if (usuario.nombre_completo) {
-      return usuario.nombre_completo
-    }
-    // Si tiene nombre y apellido, combinarlos
-    if (usuario.nombre && usuario.apellido) {
-      return `${usuario.nombre} ${usuario.apellido}`.trim()
-    }
-    // Si solo tiene nombre
-    if (usuario.nombre) {
-      return usuario.nombre
-    }
-    // Si tiene first_name y last_name
-    if (usuario.first_name && usuario.last_name) {
-      return `${usuario.first_name} ${usuario.last_name}`.trim()
-    }
-    // Si solo tiene first_name
-    if (usuario.first_name) {
-      return usuario.first_name
-    }
-    // Fallback a username
-    return usuario.username || 'Sin nombre'
-  }
-
-// Función auxiliar para formatear fecha
+// Formatear fecha a YYYY-MM-DD si es necesario
 function formatearFecha(fecha) {
   if (!fecha) return null
   if (typeof fecha === 'string') {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      return fecha
-    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha
     const date = new Date(fecha)
     if (!isNaN(date.getTime())) {
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -355,15 +329,15 @@ function validarFecha(fecha) {
   if (!fecha) return false
   const regex = /^\d{4}-\d{2}-\d{2}$/
   if (!regex.test(fecha)) return false
-  
+
   const partes = fecha.split('-')
   const anio = parseInt(partes[0])
   const mes = parseInt(partes[1])
   const dia = parseInt(partes[2])
-  
+
   if (mes < 1 || mes > 12) return false
   if (dia < 1 || dia > 31) return false
-  
+
   const fechaObj = new Date(anio, mes - 1, dia)
   return fechaObj.getFullYear() === anio &&
          fechaObj.getMonth() === mes - 1 &&
@@ -375,10 +349,8 @@ function validarRangoFechas() {
   if (!masDeUnDia.value || !formData.value.fecha_desde || !formData.value.fecha_hasta) {
     return true
   }
-  
   const fechaDesde = new Date(formData.value.fecha_desde)
   const fechaHasta = new Date(formData.value.fecha_hasta)
-  
   return fechaHasta >= fechaDesde
 }
 
@@ -389,29 +361,36 @@ async function cargarDatos() {
       ausenciasService.getUsuariosAsignados(),
       ausenciasService.getMotivosAusencia()
     ])
-    
     usuariosCompletos.value = usuariosData
-    
-    // Mapear motivos al formato esperado por el select
-    // El backend puede devolver objetos con id y titulo, o directamente el formato {value, label}
+
     motivos.value = motivosData.map(motivo => {
       if (motivo.value !== undefined && motivo.label !== undefined) {
-        // Ya está en el formato correcto
         return motivo
       } else if (motivo.id !== undefined) {
-        // Formato con id y titulo (o nombre)
         return {
           value: motivo.id,
           label: motivo.titulo || motivo.nombre || motivo.descripcion || `Motivo ${motivo.id}`
         }
       } else {
-        // Formato desconocido, intentar usar el objeto directamente
         return motivo
       }
     })
-    
-    // Inicializar opciones
-    opcionesUsuarios.value = []
+
+    // Pre-cargar el usuario logeado en las opciones si no está en modo edición
+    if (!esModoEdicion.value && user_detail.value && user_detail.value.id) {
+      const usuarioLogeado = usuariosCompletos.value.find(u => 
+        u.id === user_detail.value.id || 
+        u.userbase_id === user_detail.value.id ||
+        u.usuario_id === user_detail.value.id
+      )
+      if (usuarioLogeado) {
+        opcionesUsuarios.value = [usuarioLogeado]
+      } else {
+        opcionesUsuarios.value = []
+      }
+    } else {
+      opcionesUsuarios.value = []
+    }
   } catch (error) {
     console.error('Error al cargar datos:', error)
     $q.notify({
@@ -423,110 +402,44 @@ async function cargarDatos() {
   }
 }
 
-// Cargar datos de la ausencia a editar
+// Cargar datos de la ausencia a editar (eliminando redundancia según el Serializer)
 function cargarDatosAusencia() {
-  if (!props.ausencia) {
-    return
-  }
-
+  if (!props.ausencia) return
   const ausencia = props.ausencia
 
-  // Obtener ID del usuario según el serializer
-  // El serializer tiene: user (objeto), usuario_id (read_only), usuario_nombre (read_only)
-  let usuarioId = null
-  if (ausencia.usuario_id) {
-    // Priorizar usuario_id del serializer (más confiable)
-    usuarioId = ausencia.usuario_id
-  } else if (ausencia.user) {
-    // Si viene el objeto user, extraer el ID
-    usuarioId = obtenerId(ausencia.user, ['id', 'userbase_id', 'usuario_id'])
-  } else if (ausencia.userbase_id) {
-    usuarioId = ausencia.userbase_id
-  }
+  // El serializer ya trae usuario_id, motivo y tipo_ausencia como valores directos (ver contexto)
+  formData.value.usuario = ausencia.usuario_id ?? null
+  formData.value.tipo_ausencia = ausencia.tipo_ausencia ?? null
+  formData.value.motivo = ausencia.motivo ?? null
 
-  // Tipo de ausencia
-  if (ausencia.tipo_ausencia) {
-    formData.value.tipo_ausencia = ausencia.tipo_ausencia
-  }
-
-  // Motivo - según el serializer, motivo es un ID directo
-  if (ausencia.motivo) {
-    // Si es un número, usarlo directamente
-    if (typeof ausencia.motivo === 'number') {
-      formData.value.motivo = ausencia.motivo
-    } else {
-      // Si es un objeto, extraer el ID
-      const motivoId = obtenerId(ausencia.motivo, ['id', 'motivo_id'])
-      if (motivoId) {
-        formData.value.motivo = motivoId
-      }
-    }
-  }
-
-  // Cantidad de horas y minutos (solo para ausencia parcial)
-  if (ausencia.tipo_ausencia === 'parcial' && ausencia.cantidad_horas) {
-    formData.value.cantidad_horas = parseFloat(ausencia.cantidad_horas)
-    // Si hay minutos en el serializer, usarlos
-    if (ausencia.cantidad_minutos !== null && ausencia.cantidad_minutos !== undefined) {
-      formData.value.cantidad_minutos = ausencia.cantidad_minutos
-    } else {
-      // Calcular minutos desde las horas decimales
-      const horasDecimales = parseFloat(ausencia.cantidad_horas)
-      const horasEnteras = Math.floor(horasDecimales)
-      const minutos = Math.round((horasDecimales - horasEnteras) * 60)
-      formData.value.cantidad_minutos = minutos > 0 ? minutos : null
-    }
+  // Cantidad de horas y minutos ya llegan, solo mapear si corresponde
+  if (ausencia.tipo_ausencia === 'parcial') {
+    formData.value.cantidad_horas = ausencia.cantidad_horas != null ? parseFloat(ausencia.cantidad_horas) : null
+    // Prefiere ausencia.cantidad_minutos porque el serializer lo computa
+    formData.value.cantidad_minutos =
+      ausencia.cantidad_minutos != null ? ausencia.cantidad_minutos : null
   } else {
     formData.value.cantidad_horas = null
     formData.value.cantidad_minutos = null
   }
 
-  // Fechas
   formData.value.fecha_desde = formatearFecha(ausencia.fecha_desde)
   formData.value.fecha_hasta = formatearFecha(ausencia.fecha_hasta)
-  
-  // Si hay fecha_hasta, activar el checkbox
   masDeUnDia.value = !!formData.value.fecha_hasta
 
-  // Estado activo
   formData.value.activo = ausencia.activo !== undefined ? ausencia.activo : true
 
-  // Asignar usuario ID al formulario
-  formData.value.usuario = usuarioId
-
-  console.log('✅ Datos cargados en formulario:', formData.value)
-  console.log('🔍 Usuario ID encontrado:', usuarioId)
-
-  // Cargar opciones iniciales si hay valores
+  // OpcionesUsuarios: pre-cargar la opción seleccionada si está en la lista de usuarios completos
   setTimeout(() => {
-    if (usuarioId) {
-      // Intentar obtener el objeto usuario del serializer
-      const usuarioObj = obtenerObjeto(ausencia.user)
-      if (usuarioObj) {
-        opcionesUsuarios.value = [usuarioObj]
-        console.log('✅ Usuario encontrado desde objeto user:', usuarioObj)
-      } else if (usuariosCompletos.value.length > 0) {
-        // Buscar en la lista completa de usuarios
-        const encontrado = usuariosCompletos.value.find(u => 
-          u.id === usuarioId || u.userbase_id === usuarioId || u.usuario_id === usuarioId
-        )
-        if (encontrado) {
-          opcionesUsuarios.value = [encontrado]
-          console.log('✅ Usuario encontrado en lista completa:', encontrado)
-        } else {
-          console.warn('⚠️ Usuario no encontrado en lista completa. ID buscado:', usuarioId)
-          console.warn('📋 IDs disponibles:', usuariosCompletos.value.map(u => ({ id: u.id, userbase_id: u.userbase_id, usuario_id: u.usuario_id })))
-        }
-      } else {
-        console.warn('⚠️ Lista de usuarios aún no cargada')
+    if (formData.value.usuario && usuariosCompletos.value.length > 0) {
+      const encontrado = usuariosCompletos.value.find(u =>
+        u.id === formData.value.usuario ||
+        u.userbase_id === formData.value.usuario ||
+        u.usuario_id === formData.value.usuario
+      )
+      if (encontrado) {
+        opcionesUsuarios.value = [encontrado]
       }
-    } else {
-      console.warn('⚠️ No se encontró usuario ID en la ausencia')
-      console.warn('📋 Datos de ausencia:', { 
-        usuario_id: ausencia.usuario_id, 
-        user: ausencia.user,
-        userbase_id: ausencia.userbase_id 
-      })
     }
   }, 100)
 }
@@ -538,17 +451,15 @@ function filterUsuarios(val, update) {
       opcionesUsuarios.value = usuariosCompletos.value.slice(0, 20)
     } else {
       const needle = val.toLowerCase()
-      opcionesUsuarios.value = usuariosCompletos.value.filter(
-        usr => {
-          const nombreCompleto = obtenerNombreCompleto(usr).toLowerCase()
-          return nombreCompleto.includes(needle) ||
-                 usr.nombre?.toLowerCase().includes(needle) ||
-                 usr.apellido?.toLowerCase().includes(needle) ||
-                 usr.first_name?.toLowerCase().includes(needle) ||
-                 usr.last_name?.toLowerCase().includes(needle) ||
-                 usr.username?.toLowerCase().includes(needle)
-        }
-      ).slice(0, 20)
+      opcionesUsuarios.value = usuariosCompletos.value.filter(usr => {
+        const nombreCompleto = obtenerNombreCompleto(usr).toLowerCase()
+        return nombreCompleto.includes(needle) ||
+               usr.nombre?.toLowerCase().includes(needle) ||
+               usr.apellido?.toLowerCase().includes(needle) ||
+               usr.first_name?.toLowerCase().includes(needle) ||
+               usr.last_name?.toLowerCase().includes(needle) ||
+               usr.username?.toLowerCase().includes(needle)
+      }).slice(0, 20)
     }
   })
 }
@@ -559,12 +470,8 @@ async function guardar() {
 
   try {
     // Validar campos requeridos antes de enviar
-    if (!formData.value.tipo_ausencia) {
-      throw new Error('El tipo de ausencia es requerido')
-    }
-    if (!formData.value.motivo) {
-      throw new Error('El motivo es requerido')
-    }
+    if (!formData.value.tipo_ausencia) throw new Error('El tipo de ausencia es requerido')
+    if (!formData.value.motivo) throw new Error('El motivo es requerido')
     if (!formData.value.fecha_desde || !validarFecha(formData.value.fecha_desde)) {
       throw new Error('La fecha desde es requerida y debe tener formato YYYY-MM-DD')
     }
@@ -574,7 +481,7 @@ async function guardar() {
     if (!validarRangoFechas()) {
       throw new Error('La fecha hasta debe ser mayor o igual a la fecha desde')
     }
-    
+
     // Validar cantidad de horas para ausencia parcial
     if (formData.value.tipo_ausencia === 'parcial') {
       if (formData.value.cantidad_horas === null || formData.value.cantidad_horas === undefined || formData.value.cantidad_horas === '') {
@@ -583,7 +490,11 @@ async function guardar() {
       if (formData.value.cantidad_horas < 0) {
         throw new Error('La cantidad de horas no puede ser negativa')
       }
-      if (formData.value.cantidad_minutos !== null && formData.value.cantidad_minutos !== undefined && formData.value.cantidad_minutos !== '') {
+      if (
+        formData.value.cantidad_minutos !== null &&
+        formData.value.cantidad_minutos !== undefined &&
+        formData.value.cantidad_minutos !== ''
+      ) {
         if (formData.value.cantidad_minutos < 0 || formData.value.cantidad_minutos > 59) {
           throw new Error('Los minutos deben estar entre 0 y 59')
         }
@@ -591,37 +502,19 @@ async function guardar() {
     }
 
     // Preparar datos según el formato de la API
-    // Asegurar que usuario y motivo sean IDs (números), no objetos o strings
+    // usuario y motivo son IDs según el serializer
     let usuarioId = null
     if (formData.value.usuario) {
-      if (typeof formData.value.usuario === 'number') {
-        usuarioId = formData.value.usuario
-      } else if (typeof formData.value.usuario === 'object' && formData.value.usuario.id) {
-        usuarioId = formData.value.usuario.id
-      } else if (typeof formData.value.usuario === 'string') {
-        // Si es un string, intentar convertirlo a número
-        const parsed = parseInt(formData.value.usuario)
-        if (!isNaN(parsed)) {
-          usuarioId = parsed
-        }
-      }
+      usuarioId = typeof formData.value.usuario === 'object' && formData.value.usuario.id
+        ? formData.value.usuario.id
+        : formData.value.usuario
     }
 
     let motivoId = null
     if (formData.value.motivo) {
-      if (typeof formData.value.motivo === 'number') {
-        motivoId = formData.value.motivo
-      } else if (typeof formData.value.motivo === 'object' && formData.value.motivo.value) {
-        motivoId = formData.value.motivo.value
-      } else if (typeof formData.value.motivo === 'object' && formData.value.motivo.id) {
-        motivoId = formData.value.motivo.id
-      } else if (typeof formData.value.motivo === 'string') {
-        // Si es un string, intentar convertirlo a número
-        const parsed = parseInt(formData.value.motivo)
-        if (!isNaN(parsed)) {
-          motivoId = parsed
-        }
-      }
+      motivoId = typeof formData.value.motivo === 'object' && (formData.value.motivo.value || formData.value.motivo.id)
+        ? formData.value.motivo.value ?? formData.value.motivo.id
+        : formData.value.motivo
     }
 
     const datosParaBackend = {
@@ -630,11 +523,7 @@ async function guardar() {
       fecha_desde: formData.value.fecha_desde
     }
 
-    // Campos opcionales
-    // El backend espera 'userbase_id' (no 'user')
-    if (usuarioId) {
-      datosParaBackend.userbase_id = usuarioId
-    }
+    if (usuarioId) datosParaBackend.userbase_id = usuarioId
 
     if (masDeUnDia.value && formData.value.fecha_hasta) {
       datosParaBackend.fecha_hasta = formData.value.fecha_hasta
@@ -642,72 +531,51 @@ async function guardar() {
       datosParaBackend.fecha_hasta = null
     }
 
-    // Agregar cantidad_horas y cantidad_minutos para ausencia parcial
     if (formData.value.tipo_ausencia === 'parcial') {
       if (formData.value.cantidad_horas !== null && formData.value.cantidad_horas !== undefined) {
         datosParaBackend.cantidad_horas = parseFloat(formData.value.cantidad_horas)
       }
-      if (formData.value.cantidad_minutos !== null && formData.value.cantidad_minutos !== undefined && formData.value.cantidad_minutos !== '') {
+      if (
+        formData.value.cantidad_minutos !== null &&
+        formData.value.cantidad_minutos !== undefined &&
+        formData.value.cantidad_minutos !== ''
+      ) {
         datosParaBackend.cantidad_minutos = parseInt(formData.value.cantidad_minutos)
       }
     }
 
-    // Si está en modo edición, agregar activo y usar patch
     if (esModoEdicion.value) {
       datosParaBackend.activo = formData.value.activo
-      
-      if (!props.ausencia.id) {
-        throw new Error('No se puede editar: falta el ID de la ausencia')
-      }
 
-      console.log('📤 Enviando datos al backend para actualizar:', datosParaBackend)
+      if (!props.ausencia.id) throw new Error('No se puede editar: falta el ID de la ausencia')
+
       const resultado = await ausenciasService.patchAusencias(props.ausencia.id, datosParaBackend)
-      
-      console.log('✅ Respuesta del backend:', resultado)
-      
       $q.notify({
         type: 'positive',
         message: 'Ausencia actualizada exitosamente',
         position: 'top',
         timeout: 3000
       })
-      
       emit('guardado', resultado)
     } else {
-      // Modo creación
-      console.log('📤 Enviando datos al backend para crear:', datosParaBackend)
       const resultado = await ausenciasService.createAusencias(datosParaBackend)
-      
-      console.log('✅ Respuesta del backend:', resultado)
-      
       $q.notify({
         type: 'positive',
         message: 'Ausencia creada exitosamente',
         position: 'top',
         timeout: 3000
       })
-      
       emit('guardado', resultado)
     }
 
     cerrarFormulario()
   } catch (error) {
-    console.error(`❌ Error al ${esModoEdicion.value ? 'actualizar' : 'crear'} ausencia:`, error)
-    console.error('Detalles del error:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    })
-
     let mensajeError = `Error al ${esModoEdicion.value ? 'actualizar' : 'crear'} la ausencia`
-    
     if (error.response) {
       const status = error.response.status
       const data = error.response.data
-      
       if (status === 400) {
         mensajeError = data.detail || data.message || 'Error en los datos proporcionados. Verifica todos los campos requeridos.'
-        
         if (data.userbase_id || data.usuario) {
           const usuarioError = data.userbase_id || data.usuario
           mensajeError += `\nUsuario: ${Array.isArray(usuarioError) ? usuarioError.join(', ') : usuarioError}`
@@ -743,7 +611,6 @@ async function guardar() {
     } else if (error.message) {
       mensajeError = error.message
     }
-
     $q.notify({
       type: 'negative',
       message: mensajeError,
@@ -756,23 +623,23 @@ async function guardar() {
   }
 }
 
-  // Resetear formulario
-  function resetearFormulario() {
-    formData.value = {
-      usuario: null,
-      tipo_ausencia: null,
-      motivo: null,
-      fecha_desde: null,
-      fecha_hasta: null,
-      cantidad_horas: null,
-      cantidad_minutos: null,
-      activo: true
-    }
-    masDeUnDia.value = false
-    if (props.ausencia) {
-      cargarDatosAusencia()
-    }
+// Resetear formulario
+function resetearFormulario() {
+  formData.value = {
+    usuario: null,
+    tipo_ausencia: null,
+    motivo: null,
+    fecha_desde: null,
+    fecha_hasta: null,
+    cantidad_horas: null,
+    cantidad_minutos: null,
+    activo: true
   }
+  masDeUnDia.value = false
+  if (props.ausencia) {
+    cargarDatosAusencia()
+  }
+}
 
 // Cerrar formulario
 function cerrarFormulario() {
@@ -781,20 +648,21 @@ function cerrarFormulario() {
   resetearFormulario()
 }
 
-  // Watch para limpiar fecha_hasta cuando se desmarca el checkbox
-  watch(masDeUnDia, (nuevo) => {
-    if (!nuevo) {
-      formData.value.fecha_hasta = null
-    }
-  })
+// Watch para limpiar fecha_hasta cuando se desmarca el checkbox
+watch(masDeUnDia, (nuevo) => {
+  if (!nuevo) {
+    formData.value.fecha_hasta = null
+  }
+})
 
-  // Watch para limpiar cantidad_horas y cantidad_minutos cuando cambia el tipo de ausencia
-  watch(() => formData.value.tipo_ausencia, (nuevoTipo) => {
-    if (nuevoTipo !== 'parcial') {
-      formData.value.cantidad_horas = null
-      formData.value.cantidad_minutos = null
-    }
-  })
+// Watch para limpiar cantidad_horas y cantidad_minutos cuando cambia el tipo de ausencia
+watch(() => formData.value.tipo_ausencia, (nuevoTipo) => {
+  if (nuevoTipo !== 'parcial') {
+    formData.value.cantidad_horas = null
+    formData.value.cantidad_minutos = null
+  }
+})
+
 
 // Watch para cargar datos cuando se abre el modal o cambia la ausencia
 watch(() => props.modelValue, async (nuevoValor) => {
@@ -805,10 +673,15 @@ watch(() => props.modelValue, async (nuevoValor) => {
         cargarDatosAusencia()
       }, 200)
     } else {
-      // Establecer fecha por defecto a hoy solo en modo creación
+      // Establecer fecha de hoy
       const hoy = new Date()
       const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
       formData.value.fecha_desde = fechaHoy
+      
+      // Establecer usuario logeado por defecto
+      if (user_detail.value && user_detail.value.id) {
+        formData.value.usuario = user_detail.value.id
+      }
     }
   }
 })
@@ -833,9 +706,15 @@ onMounted(async () => {
         cargarDatosAusencia()
       }, 200)
     } else {
+      // Establecer fecha de hoy
       const hoy = new Date()
       const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
       formData.value.fecha_desde = fechaHoy
+      
+      // Establecer usuario logeado por defecto
+      if (user_detail.value && user_detail.value.id) {
+        formData.value.usuario = user_detail.value.id
+      }
     }
   }
 })

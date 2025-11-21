@@ -182,6 +182,21 @@ export const registrosService = {
   },
 
   /**
+   * Obtiene los datos de empresa, subempresas y sucursales de un usuario
+   * @param {number} usuarioId - ID del usuario
+   * @returns {Promise} Promesa con los datos de empresas, subempresas y sucursales del usuario
+   */
+  async getUsuarioEmpresaData(usuarioId) {
+    try {
+      const response = await api.get(`/usuario-empresa-data/${usuarioId}/`)
+      return response.data
+    } catch (error) {
+      console.error(`Error al obtener datos de empresa del usuario ${usuarioId}:`, error)
+      throw error
+    }
+  },
+
+  /**
    * Obtiene información sobre el archivo Excel de registros existente
    * @returns {Promise} Promesa con los datos del archivo (url, fecha, tamaño, etc.)
    */

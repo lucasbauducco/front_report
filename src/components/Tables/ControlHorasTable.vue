@@ -80,6 +80,34 @@
               flat
               bordered
             >
+              <template v-slot:body-cell-coordenadas_inicio="props">
+                <q-td :props="props">
+                  <a
+                    v-if="props.row.coor_inicio_x && props.row.coor_inicio_y"
+                    :href="`https://www.google.com/maps?q=${props.row.coor_inicio_y},${props.row.coor_inicio_x}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <q-icon name="location_on" />
+                    <span style="display:none">{{ props.row.coor_inicio_y }},{{ props.row.coor_inicio_x }}</span>
+                  </a>
+                  <span v-else><q-icon name="location_off" /></span>
+                </q-td>
+              </template>
+              <template v-slot:body-cell-coordenadas_fin="props">
+                <q-td :props="props">
+                  <a
+                    v-if="props.row.coor_fin_x && props.row.coor_fin_y"
+                    :href="`https://www.google.com/maps?q=${props.row.coor_fin_y},${props.row.coor_fin_x}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <q-icon name="location_on" />
+                    <span style="display:none">{{ props.row.coor_fin_y }},{{ props.row.coor_fin_x }}</span>
+                  </a>
+                  <span v-else><q-icon name="location_off" /></span>
+                </q-td>
+              </template>
               <template v-slot:body-cell-activo="props">
                 <q-td :props="props">
                   <q-badge
@@ -227,6 +255,39 @@
         const segundos = Math.round((minutosDecimales - minutos) * 60)
         const pad = n => n.toString().padStart(2, '0')
         return `${pad(horas)}:${pad(minutos)}:${pad(segundos)}`
+      }
+    },
+    {
+      name: 'coordenadas_inicio',
+      label: 'Inic.',
+      field: row => ({ x: row.coor_inicio_x, y: row.coor_inicio_y }),
+      align: 'center',
+      sortable: false,
+      requiredAuth: false,
+      // Render Google Maps link with icon if coordinates exist
+      format: val => {
+        if (!val || !val.x || !val.y) return '-'
+        const url = `https://www.google.com/maps?q=${val.y},${val.x}`
+        return `<a href="${url}" target="_blank" style="color: #1976D2" title="Ver en Google Maps">
+                  <span class="q-icon material-icons" style="vertical-align: middle;">location_on</span>
+                  <span style="display:none">${val.x},${val.y}</span>
+                </a>`
+      }
+    },
+    {
+      name: 'coordenadas_fin',
+      label: 'Fin',
+      field: row => ({ x: row.coor_fin_x, y: row.coor_fin_y }),
+      align: 'center',
+      sortable: false,
+      requiredAuth: false,
+      format: val => {
+        if (!val || !val.x || !val.y) return '-'
+        const url = `https://www.google.com/maps?q=${val.y},${val.x}`
+        return `<a href="${url}" target="_blank" style="color: #1976D2" title="Ver en Google Maps">
+                  <span class="q-icon material-icons" style="vertical-align: middle;">location_on</span>
+                  <span style="display:none">${val.x},${val.y}</span>
+                </a>`
       }
     },
     {

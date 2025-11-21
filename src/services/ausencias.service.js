@@ -213,5 +213,25 @@ export const ausenciasService = {
         throw error
         }
     },
-
+        /**
+     * Obtiene las horas faltantes de registro para un usuario en una fecha específica
+     * @param {string} fecha - Fecha en formato YYYY-MM-DD
+     * @param {number} usuarioId - ID del usuario (opcional, por defecto usa el usuario autenticado)
+     * @returns {Promise} Promesa con los datos de horas faltantes
+     */
+        async getHorasFaltantes(fecha, usuarioId = null) {
+          try {
+          const params = { fecha }
+          if (usuarioId) {
+              params.usuario_id = usuarioId
+          }
+          const response = await api.get('/horas-faltantes/', { params })
+          return response.data
+          } catch (error) {
+          console.error('Error al obtener horas faltantes:', error)
+          throw error
+          }
+      },
 }
+
+export default ausenciasService
